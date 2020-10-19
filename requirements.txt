@@ -1,0 +1,2 @@
+PyGithub==1.53
+pyyaml==5.3.1

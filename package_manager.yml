@@ -1,0 +1,7 @@
+repositories:
+  - dbt_hubspot
+
+require-dbt-version: ">=0.18.0"
+
+packages:
+  fishtown-analytics/dbt_utils: [">0.7.0", "<0.8.0"]
