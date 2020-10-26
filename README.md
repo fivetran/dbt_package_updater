@@ -8,15 +8,15 @@ Hooper is a command line tool that enables dbt developers to automatically updat
 
 ### 1. Clone this repository
 
-In order to use Hooper, you will need to close your repository. You can do so using the method of your choosing.
+In order to use Hooper, you will need to clone this repository. You can do so using the method of your choosing.
 
 ### 2. Set up a local environment
 
-We recommend creating a separate folder and Python virtual environment for dbt Package Manager.
+We recommend creating a separate Python virtual environment for Hooper.
 
 NOTE: If you already have a preferred approach for creating a Python virtual environment, you can skip this step!
 
-Create a Python virtual environment for Spectacles. If you don't already have a preferred way of doing this, we recommend pyenv-virtualenv. Follow the instructions to install pyenv and pyenv-virtualenv. Then, from your spectacles folder, run the following:
+Create a Python virtual environment for Hooper. If you don't already have a preferred way of doing this, we recommend pyenv-virtualenv. Follow the instructions to install pyenv and pyenv-virtualenv. Then, from the Hooper repository, run the following:
 ```bash
 pyenv virtualenv 3.8 hooper && pyenv local hooper
 ```
