@@ -2,4 +2,3 @@ PyGithub==1.53
 pyyaml==5.3.1
 mypy==0.790
 argparse==1.4.0
-setuptools==50.3.0
