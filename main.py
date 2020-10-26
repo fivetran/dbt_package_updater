@@ -122,7 +122,6 @@ def create_parser() -> argparse.ArgumentParser:
 def main():
     parser = create_parser()
     args = parser.parse_args()
-    print(args.repo_type)
 
     # Setup
     branch_name = set_branch_name()
@@ -131,7 +130,7 @@ def main():
     client = get_github_client(creds["access_token"])
 
     # Iterate through repos
-    for repo_name in config["repositories"]:
+    for repo_name in config["repositories"][args.repo_type]:
         repo = setup_repo(client, repo_name, branch_name)
         update_packages(repo, branch_name, config)
         update_project(repo, branch_name, config)
