@@ -3,6 +3,7 @@ import yaml
 import hashlib
 import time
 import argparse
+import ruamel.yaml
 
 
 def set_branch_name() -> str:
@@ -24,7 +25,7 @@ def get_github_client(access_token: str) -> github.Github:
 
 def load_configurations() -> dict:
     with open("package_manager.yml") as file:
-        config = yaml.load(file, Loader=yaml.FullLoader)
+        config = ruamel.yaml.load(file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)        
     return config
 
 
@@ -42,7 +43,7 @@ def update_packages(
 ) -> None:
     try:
         packages_content = repo.get_contents("packages.yml")
-        packages = yaml.load(packages_content.decoded_content, Loader=yaml.FullLoader)
+        packages = ruamel.yaml.load(packages_content.decoded_content, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)
 
         for package in packages["packages"]:
             name = package["package"]
@@ -52,7 +53,7 @@ def update_packages(
         repo.update_file(
             path=packages_content.path,
             message="Updating package dependendcies",
-            content=yaml.dump(packages, encoding="utf-8", default_flow_style=False),
+            content=ruamel.yaml.dump(packages, Dumper=ruamel.yaml.RoundTripDumper),
             sha=packages_content.sha,
             branch=branch_name,
         )
@@ -64,13 +65,14 @@ def update_project(
     repo: github.Repository.Repository, branch_name: str, config: str
 ) -> None:
     project_content = repo.get_contents("dbt_project.yml")
-    project = yaml.load(project_content.decoded_content, Loader=yaml.FullLoader)
+    project = ruamel.yaml.load(project_content.decoded_content, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)
+
     project["require-dbt-version"] = config["require-dbt-version"]
 
     repo.update_file(
         path=project_content.path,
         message="Updating require-dbt-version",
-        content=yaml.dump(project, encoding="utf-8", default_flow_style=False),
+        content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper),
         sha=project_content.sha,
         branch=branch_name,
     )

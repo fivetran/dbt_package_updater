@@ -1,6 +1,6 @@
 repositories:
   transform:
-    - dbt_hubspot
+    - dbt_linkedin
   source:
     # - dbt_hubspot_source
     - dbt_linkedin_source
