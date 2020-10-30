@@ -40,21 +40,24 @@ def setup_repo(
 def update_packages(
     repo: github.Repository.Repository, branch_name: str, config: dict
 ) -> None:
-    packages_content = repo.get_contents("packages.yml")
-    packages = yaml.load(packages_content.decoded_content, Loader=yaml.FullLoader)
+    try:
+        packages_content = repo.get_contents("packages.yml")
+        packages = yaml.load(packages_content.decoded_content, Loader=yaml.FullLoader)
 
-    for package in packages["packages"]:
-        name = package["package"]
-        if name in config["packages"]:
-            package["version"] = config["packages"][name]
+        for package in packages["packages"]:
+            name = package["package"]
+            if name in config["packages"]:
+                package["version"] = config["packages"][name]
 
-    repo.update_file(
-        path=packages_content.path,
-        message="Updating package dependendcies",
-        content=yaml.dump(packages, encoding="utf-8", default_flow_style=False),
-        sha=packages_content.sha,
-        branch=branch_name,
-    )
+        repo.update_file(
+            path=packages_content.path,
+            message="Updating package dependendcies",
+            content=yaml.dump(packages, encoding="utf-8", default_flow_style=False),
+            sha=packages_content.sha,
+            branch=branch_name,
+        )
+    except github.GithubException:
+        print("'packages.yml' not found in repo.")
 
 
 def update_project(
