@@ -25,7 +25,7 @@ def get_github_client(access_token: str) -> github.Github:
 
 def load_configurations() -> dict:
     with open("package_manager.yml") as file:
-        config = yaml.load(file, Loader=yaml.FullLoader)
+        config = ruamel.yaml.load(file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)        
     return config
 
 
