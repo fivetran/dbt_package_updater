@@ -46,9 +46,14 @@ def update_packages(
         packages = ruamel.yaml.load(packages_content.decoded_content, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)
 
         for package in packages["packages"]:
-            name = package["package"]
-            if name in config["packages"]:
-                package["version"] = config["packages"][name]
+            if "package" in package:
+                name = package["package"]
+                if name in config["packages"]:
+                    package["version"] = config["packages"][name]
+            if "git" in package:
+                name = package["git"]
+                if name in config["packages"]:
+                    package["revision"] = config["packages"][name]
 
         repo.update_file(
             path=packages_content.path,
