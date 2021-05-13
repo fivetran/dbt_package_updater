@@ -33,7 +33,10 @@ def setup_repo(
     client: github.Github, repo_name: str, branch_name: str
 ) -> github.Repository.Repository:
     repo = client.get_repo("Fivetran/" + repo_name)
-    master_sha = repo.get_branch(branch="master").commit.sha
+    try:
+        master_sha = repo.get_branch(branch="master").commit.sha
+    except:
+        master_sha = repo.get_branch(branch="main").commit.sha
     repo.create_git_ref(ref="refs/heads/" + branch_name, sha=master_sha)
     return repo
 
@@ -42,97 +45,44 @@ def update_packages(
     repo: github.Repository.Repository, branch_name: str, config: dict
 ) -> None:
     try:
-        packages_content = repo.get_contents("packages.yml")
-        packages = ruamel.yaml.load(packages_content.decoded_content, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)
-
-        for package in packages["packages"]:
-            if "package" in package:
-                name = package["package"]
-                if name in config["packages"]:
-                    package["version"] = config["packages"][name]
-            if "git" in package:
-                name = package["git"]
-                if name in config["packages"]:
-                    package["revision"] = config["packages"][name]
-
-        repo.update_file(
-            path=packages_content.path,
-            message="Updating package dependendcies",
-            content=ruamel.yaml.dump(packages, Dumper=ruamel.yaml.RoundTripDumper),
-            sha=packages_content.sha,
-            branch=branch_name,
-        )
+        files = ['pull_request_template.md','ISSUE_TEMPLATE/bug_report.md','ISSUE_TEMPLATE/feature_request.md','ISSUE_TEMPLATE/question.md'] # These can be updated for the files and path you want to upload
+        for file in files:
+            current_file = open('docs/' + file, 'r')
+            content = current_file.read()
+            repo.create_file(".github/" + file, "template add", content, branch=branch_name) # This make three concurrent commits, maybe there is a way to have it wait?
     except github.GithubException:
-        print("'packages.yml' not found in repo.")
-
-
-def update_project(
-    repo: github.Repository.Repository, branch_name: str, config: str
-) -> None:
-    project_content = repo.get_contents("dbt_project.yml")
-    project = ruamel.yaml.load(project_content.decoded_content, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)
-
-    project["require-dbt-version"] = config["require-dbt-version"]
-
-    repo.update_file(
-        path=project_content.path,
-        message="Updating require-dbt-version",
-        content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper),
-        sha=project_content.sha,
-        branch=branch_name,
-    )
-
-
-def update_requirements(
-    repo: github.Repository.Repository, branch_name: str, config: str
-) -> None:
-    try:
-        requirements_content = repo.get_contents("integration_tests/requirements.txt")
-        repo.update_file(
-            path=requirements_content.path,
-            message="Updating dbt version in requirements.txt",
-            content="dbt==" + str(config["ci-dbt-version"]),
-            sha=requirements_content.sha,
-            branch=branch_name,
-        )
-    except github.GithubException:
-        repo.create_file(
-            path="integration_tests/requirements.txt",
-            message="Updating dbt version in requirements.txt",
-            content="dbt==" + str(config["ci-dbt-version"]),
-            branch=branch_name,
-        )
-
+        print("The creation of the templates failed")
 
 def open_pull_request(repo: github.Repository.Repository, branch_name: str) -> None:
     body = """
-    #### This pull request was created automatically 🎉
+    ---
+    assignees: 'fivetran-joemarkiewicz'
+    ---
+    This pull request was created automatically 🎉
+    This PR does not require cutting a release as it only includes cosmetic changes by including Issue and PR templates which do not
+    impact the contents of the package.
 
     Before merging this PR:
     - [ ] Verify that all the tests pass.
-    - [ ] Tag a release 
     """
-
-    pull = repo.create_pull(
-        title="[MagicBot] Bumping package version",
-        body=body,
-        head=branch_name,
-        base="master",
-    )
+    try:
+        pull = repo.create_pull(
+            title="[MagicBot] - Adding Issue and PR templates",
+            body=body,
+            head=branch_name,
+            base="master"
+        )
+    except:
+        pull = repo.create_pull(
+            title="[MagicBot] - Adding Issue and PR templates",
+            body=body,
+            head=branch_name,
+            base="main"
+        )
 
     print(pull.html_url)
 
-
-def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="dbt-package-manager")
-    parser.add_argument("--repo-type", required=True)
-    return parser
-
-
 def main():
-    parser = create_parser()
-    args = parser.parse_args()
-
     # Setup
     branch_name = set_branch_name()
     creds = load_credentials()
@@ -140,11 +90,10 @@ def main():
     client = get_github_client(creds["access_token"])
 
     # Iterate through repos
-    for repo_name in config["repositories"][args.repo_type]:
+    for repo_name in config["repositories"]:
+        print(repo_name)
         repo = setup_repo(client, repo_name, branch_name)
         update_packages(repo, branch_name, config)
-        update_project(repo, branch_name, config)
-        update_requirements(repo, branch_name, config)
         open_pull_request(repo, branch_name)
 
 

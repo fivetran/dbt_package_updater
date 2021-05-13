@@ -1,16 +1,67 @@
 repositories:
-  transform:
-    - dbt_linkedin
-  source:
-    # - dbt_hubspot_source
-    - dbt_linkedin_source
-  utils:
-    - dbt_fivetran_utils
+  # Done - dbt_google_ads
+  # Created - dbt_quickbooks
+  # Created - dbt_shopify_source
+  # Created - dbt_asana_source
+  # Created - dbt_ad_reporting
+  # Created - dbt_google_ads_source
+  # Created - dbt_facebook_ads_source
+  # Created - dbt_linkedin_source
+  # Done - dbt_xero_source
+  # Created - dbt_greenhouse
+  # Created - dbt_netsuite
+  # Created - dbt_pardot
 
-require-dbt-version: [">=0.18.0", "<0.19.0"]
+  - dbt_github
+  - dbt_jira
+  - dbt_twitter
+  - dbt_microsoft_ads_source
+  # Done - dbt_starter_project
+  - dbt_netsuite_source
+  - dbt_hubspot
+  - dbt_pinterest_source
+  # Done - dbt_klaviyo
+  - dbt_snapchat_ads
+  - dbt_mailchimp_source
+  - dbt_lever
 
-packages:
-  fishtown-analytics/dbt_utils: [">=0.6.0", "<0.7.0"]
-  "https://github.com/fivetran/dbt_fivetran_utils.git": master 
+  # - dbt_asana
+  # - dbt_pardot_source
+  # Done - dbt_mailchimp
+  # - dbt_facebook_ads_creative_history
+  # - dbt_stripe
+  # - dbt_linkedin
+  # - dbt_microsoft_ads
+  # - dbt_zendesk_source
+  # Done - dbt_iterable_source
+  # - dbt_ad_reporting
+  # Done - dbt_klaviyo_source
+  # - dbt_zendesk
+  # - dbt_snapchat_ads_source
 
-ci-dbt-version: 0.18.0
+  # - dbt_lever_source
+  # - dbt_mixpanel
+  # - dbt_greenhouse_source
+  # Done - dbt_iterable
+  # - dbt_shopify
+  # - dbt_fivetran_log
+  # - dbt_hubspot_source
+  # - dbt_facebook_ads
+  # - dbt_salesforce
+  # - dbt_stripe_source
+  # - dbt_marketo
+
+  # - dbt_twitter_source
+  # - dbt_salesforce_source
+  # - dbt_marketo_source
+  # - dbt_xero
+  # - dbt_quickbooks_source
+  # - dbt_jira_source
+  # - dbt_intercom_source
+  # - dbt_pinterest
+  # - dbt_github_source
+  # - dbt_intercom
+
+  # - dbt_asana
+  # - dbt_marketo
+  # - dbt_salesforce_formula_utils
