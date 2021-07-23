@@ -2,15 +2,21 @@ repositories:
   transform:
     - dbt_linkedin
   source:
-    # - dbt_hubspot_source
     - dbt_linkedin_source
   utils:
     - dbt_fivetran_utils
 
-require-dbt-version: [">=0.18.0", "<0.19.0"]
+require-dbt-version: [">=0.20.0"]
 
 packages:
-  fishtown-analytics/dbt_utils: [">=0.6.0", "<0.7.0"]
-  "https://github.com/fivetran/dbt_fivetran_utils.git": master 
+  fivetran/fivetran_utils: [">=0.2.0", "<0.3.0"]
 
-ci-dbt-version: 0.18.0
+requirements:
+  - name: dbt
+    version: 0.20.0
+  - name: dbt-spark
+    version: 0.20.0
+  - name: dbt-spark[PyHive]
+    version: 0.20.0
+
+version-bump-type: minor # major, minor or patch

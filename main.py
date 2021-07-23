@@ -25,7 +25,9 @@ def get_github_client(access_token: str) -> github.Github:
 
 def load_configurations() -> dict:
     with open("package_manager.yml") as file:
-        config = ruamel.yaml.load(file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)        
+        config = ruamel.yaml.load(
+            file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True
+        )
     return config
 
 
@@ -43,7 +45,11 @@ def update_packages(
 ) -> None:
     try:
         packages_content = repo.get_contents("packages.yml")
-        packages = ruamel.yaml.load(packages_content.decoded_content, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)
+        packages = ruamel.yaml.load(
+            packages_content.decoded_content,
+            Loader=ruamel.yaml.RoundTripLoader,
+            preserve_quotes=True,
+        )
 
         for package in packages["packages"]:
             if "package" in package:
@@ -70,9 +76,31 @@ def update_project(
     repo: github.Repository.Repository, branch_name: str, config: str
 ) -> None:
     project_content = repo.get_contents("dbt_project.yml")
-    project = ruamel.yaml.load(project_content.decoded_content, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)
+    project = ruamel.yaml.load(
+        project_content.decoded_content,
+        Loader=ruamel.yaml.RoundTripLoader,
+        preserve_quotes=True,
+    )
 
     project["require-dbt-version"] = config["require-dbt-version"]
+
+    current_version = project["version"]
+    bump_type = config["version-bump-type"]
+
+    current_version_split = current_version.split(".")
+
+    if bump_type == "patch":
+        current_version_split[2] = str(int(current_version_split[2]) + 1)
+    elif bump_type == "minor":
+        current_version_split[1] = str(int(current_version_split[1]) + 1)
+        current_version_split[2] = "0"
+    elif bump_type == "major":
+        current_version_split[0] = str(int(current_version_split[0]) + 1)
+        current_version_split[1] = "0"
+        current_version_split[2] = "0"
+
+    new_version = ".".join(current_version_split)
+    project["version"] = new_version
 
     repo.update_file(
         path=project_content.path,
@@ -88,10 +116,13 @@ def update_requirements(
 ) -> None:
     try:
         requirements_content = repo.get_contents("integration_tests/requirements.txt")
+        new_content = ""
+        for requirement in config["requirements"]:
+            new_content += f"{requirement['name']}=={requirement['version']}\n"
         repo.update_file(
             path=requirements_content.path,
             message="Updating dbt version in requirements.txt",
-            content="dbt==" + str(config["ci-dbt-version"]),
+            content=new_content,
             sha=requirements_content.sha,
             branch=branch_name,
         )
@@ -99,7 +130,7 @@ def update_requirements(
         repo.create_file(
             path="integration_tests/requirements.txt",
             message="Updating dbt version in requirements.txt",
-            content="dbt==" + str(config["ci-dbt-version"]),
+            content=new_content,
             branch=branch_name,
         )
 
