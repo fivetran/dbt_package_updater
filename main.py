@@ -31,13 +31,16 @@ def load_configurations() -> dict:
     return config
 
 
-def setup_repo(
-    client: github.Github, repo_name: str, branch_name: str
-) -> github.Repository.Repository:
+def setup_repo(client: github.Github, repo_name: str, branch_name: str):
     repo = client.get_repo("Fivetran/" + repo_name)
-    master_sha = repo.get_branch(branch="master").commit.sha
+    try:
+        master_sha = repo.get_branch(branch="master").commit.sha
+        default_branch = "master"
+    except:
+        master_sha = repo.get_branch(branch="main").commit.sha
+        default_branch = "main"
     repo.create_git_ref(ref="refs/heads/" + branch_name, sha=master_sha)
-    return repo
+    return repo, default_branch
 
 
 def update_packages(
@@ -135,7 +138,9 @@ def update_requirements(
         )
 
 
-def open_pull_request(repo: github.Repository.Repository, branch_name: str) -> None:
+def open_pull_request(
+    repo: github.Repository.Repository, branch_name: str, default_branch: str
+) -> None:
     body = """
     #### This pull request was created automatically 🎉
 
@@ -148,7 +153,7 @@ def open_pull_request(repo: github.Repository.Repository, branch_name: str) -> N
         title="[MagicBot] Bumping package version",
         body=body,
         head=branch_name,
-        base="master",
+        base=default_branch,
     )
 
     print(pull.html_url)
@@ -172,11 +177,11 @@ def main():
 
     # Iterate through repos
     for repo_name in config["repositories"][args.repo_type]:
-        repo = setup_repo(client, repo_name, branch_name)
+        repo, default_branch = setup_repo(client, repo_name, branch_name)
         update_packages(repo, branch_name, config)
         update_project(repo, branch_name, config)
         update_requirements(repo, branch_name, config)
-        open_pull_request(repo, branch_name)
+        open_pull_request(repo, branch_name, default_branch)
 
 
 if __name__ == "__main__":
