@@ -26,7 +26,7 @@ repositories:
     # - dbt_quickbooks
     # - dbt_salesforce
     # - dbt_salesforce_formula_utils
-    - dbt_snapchat_ads
+    # - dbt_snapchat_ads
     # - dbt_shopify
     # - dbt_stripe
     # - dbt_twitter
@@ -43,7 +43,7 @@ repositories:
     # - dbt_jira_source
     # - dbt_klaviyo_source
     # - dbt_lever_source
-    # - dbt_linkedin_source
+    - dbt_linkedin_source
     # - dbt_marketo_source
     # - dbt_microsoft_ads_source
     # - dbt_netsuite_source
@@ -61,7 +61,7 @@ repositories:
     # - dbt_facebook_ads_creative_history
     # - dbt_ad_reporting
 
-require-dbt-version: [">=0.20.0"]
+require-dbt-version: [">=0.21.0", "<1.1.0"]
 
 packages:
   fivetran/fivetran_utils: [">=0.2.0", "<0.3.0"]
@@ -86,11 +86,17 @@ packages:
   fivetran/snapchat_ads_source: [">=0.2.0", "<0.3.0"]
 
 requirements:
-  - name: dbt
-    version: 0.20.0
+  - name: dbt-snowflake
+    version: 1.0.0
+  - name: dbt-bigquery
+    version: 1.0.0
+  - name: dbt-redshift
+    version: 1.0.0
+  - name: dbt-postgres
+    version: 1.0.0
   - name: dbt-spark
-    version: 0.20.0
+    version: 1.0.0
   - name: dbt-spark[PyHive]
-    version: 0.20.0
+    version: 1.0.0
 
 version-bump-type: minor # major, minor or patch
