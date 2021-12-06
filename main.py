@@ -75,7 +75,7 @@ def update_packages(
         print("'packages.yml' not found in repo.")
 
 
-def update_project(
+def update_version(
     repo: github.Repository.Repository, branch_name: str, config: str
 ) -> None:
     project_content = repo.get_contents("dbt_project.yml")
@@ -84,8 +84,6 @@ def update_project(
         Loader=ruamel.yaml.RoundTripLoader,
         preserve_quotes=True,
     )
-
-    project["require-dbt-version"] = config["require-dbt-version"]
 
     current_version = project["version"]
     bump_type = config["version-bump-type"]
@@ -104,6 +102,27 @@ def update_project(
 
     new_version = ".".join(current_version_split)
     project["version"] = new_version
+
+    repo.update_file(
+        path=project_content.path,
+        message="Updating version in dbt_project.yml",
+        content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper),
+        sha=project_content.sha,
+        branch=branch_name,
+    )
+
+
+def update_project(
+    repo: github.Repository.Repository, branch_name: str, config: str
+) -> None:
+    project_content = repo.get_contents("dbt_project.yml")
+    project = ruamel.yaml.load(
+        project_content.decoded_content,
+        Loader=ruamel.yaml.RoundTripLoader,
+        preserve_quotes=True,
+    )
+
+    project["require-dbt-version"] = config["require-dbt-version"]
 
     # v1.0.0 migrations
 
@@ -283,6 +302,7 @@ def main():
         update_requirements(repo, branch_name, config)
         add_dbt_packages_to_gitnore(repo, branch_name)
         update_data_folder_to_seed(repo, branch_name)
+        update_version(repo, branch_name, config)
         open_pull_request(repo, branch_name, default_branch)
 
 
