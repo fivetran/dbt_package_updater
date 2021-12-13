@@ -67,7 +67,9 @@ def update_packages(
         repo.update_file(
             path=packages_content.path,
             message="[ci skip] Updating package dependendcies",
-            content=ruamel.yaml.dump(packages, Dumper=ruamel.yaml.RoundTripDumper),
+            content=ruamel.yaml.dump(
+                packages, Dumper=ruamel.yaml.RoundTripDumper, width=10000
+            ),
             sha=packages_content.sha,
             branch=branch_name,
         )
@@ -117,7 +119,9 @@ def update_project(
     repo.update_file(
         path=project_content.path,
         message="Updating dbt_project.yml",
-        content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper),
+        content=ruamel.yaml.dump(
+            project, Dumper=ruamel.yaml.RoundTripDumper, width=10000
+        ),
         sha=project_content.sha,
         branch=branch_name,
     )
@@ -143,7 +147,9 @@ def update_integration_project(
     repo.update_file(
         path=project_content.path,
         message="[ci skip] Updating integration_tests/dbt_project.yml",
-        content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper),
+        content=ruamel.yaml.dump(
+            project, Dumper=ruamel.yaml.RoundTripDumper, width=10000
+        ),
         sha=project_content.sha,
         branch=branch_name,
     )
