@@ -75,7 +75,7 @@ def update_packages(
         print("'packages.yml' not found in repo.")
 
 
-def update_version(
+def update_project(
     repo: github.Repository.Repository, branch_name: str, config: str
 ) -> None:
     project_content = repo.get_contents("dbt_project.yml")
@@ -103,25 +103,6 @@ def update_version(
     new_version = ".".join(current_version_split)
     project["version"] = new_version
 
-    repo.update_file(
-        path=project_content.path,
-        message="Updating version in dbt_project.yml",
-        content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper),
-        sha=project_content.sha,
-        branch=branch_name,
-    )
-
-
-def update_project(
-    repo: github.Repository.Repository, branch_name: str, config: str
-) -> None:
-    project_content = repo.get_contents("dbt_project.yml")
-    project = ruamel.yaml.load(
-        project_content.decoded_content,
-        Loader=ruamel.yaml.RoundTripLoader,
-        preserve_quotes=True,
-    )
-
     project["require-dbt-version"] = config["require-dbt-version"]
 
     # v1.0.0 migrations
@@ -135,7 +116,7 @@ def update_project(
 
     repo.update_file(
         path=project_content.path,
-        message="[ci skip] Updating dbt_project.yml",
+        message="Updating dbt_project.yml",
         content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper),
         sha=project_content.sha,
         branch=branch_name,
@@ -298,11 +279,10 @@ def main():
     for repo_name in config["repositories"][args.repo_type]:
         repo, default_branch = setup_repo(client, repo_name, branch_name)
         update_packages(repo, branch_name, config)
-        update_project(repo, branch_name, config)
         update_requirements(repo, branch_name, config)
         add_dbt_packages_to_gitnore(repo, branch_name)
         update_data_folder_to_seed(repo, branch_name)
-        update_version(repo, branch_name, config)
+        update_project(repo, branch_name, config)
         open_pull_request(repo, branch_name, default_branch)
 
 
