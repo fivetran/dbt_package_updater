@@ -1,59 +1,78 @@
 repositories:
-  # Done - dbt_google_ads
-  # Done - dbt_quickbooks
-  # Done - dbt_shopify_source
-  # Done - dbt_asana_source
-  # Done - dbt_ad_reporting
-  # Done - dbt_google_ads_source
-  # Done - dbt_facebook_ads_source
-  # Done - dbt_linkedin_source
-  # Done - dbt_xero_source
-  # Done - dbt_greenhouse
-  # Done - dbt_netsuite
-  # Done - dbt_pardot
-  # Done - dbt_github
-  # Done - dbt_jira
-  # Done - dbt_twitter
-  # Done - dbt_microsoft_ads_source
-  # Done - dbt_starter_project
-  # Done - dbt_netsuite_source
-  # Done - dbt_hubspot
-  # Done - dbt_pinterest_source
-  # Done - dbt_klaviyo
-  # Done - dbt_snapchat_ads
-  # Done - dbt_mailchimp_source
-  # Done - dbt_lever
-  # Done - dbt_asana
-  # Done - dbt_pardot_source
-  # Done - dbt_mailchimp
-  # Done - dbt_facebook_ads_creative_history
-  # Done - dbt_stripe
-  # Done - dbt_linkedin
-  # Done - dbt_microsoft_ads
-  # Done - dbt_zendesk_source
-  # Done - dbt_iterable_source
-  # Done - dbt_klaviyo_source
-  # Done - dbt_zendesk
-  # Done - dbt_snapchat_ads_source
-  # Done - dbt_lever_source
-  # Done - dbt_mixpanel
-  # Done - dbt_greenhouse_source
-  # Done - dbt_iterable
-  # Done - dbt_shopify
-  # Done - dbt_fivetran_log
-  # Done - dbt_hubspot_source
-  # Done - dbt_facebook_ads
-  # Done - dbt_salesforce
-  # Done - dbt_stripe_source
-  # Done - dbt_marketo
-  # Done - dbt_twitter_source
-  # Done - dbt_salesforce_source
-  # Done - dbt_marketo_source
-  # Done - dbt_xero
-  # Done - dbt_quickbooks_source
-  # Done - dbt_jira_source
-  # Done - dbt_intercom_source
-  # Done - dbt_pinterest
-  # Done - dbt_github_source
-  # Done - dbt_intercom
-  # Done - dbt_salesforce_formula_utils
+  # - dbt_apple_search_ads
+  # - dbt_asana
+  # - dbt_facebook_ads
+  # - dbt_facebook_pages
+  # - dbt_fivetran_log
+  # - dbt_github
+  # - dbt_google_ads
+  # - dbt_greenhouse
+  # - dbt_hubspot
+  # - dbt_instagram_business
+  # - dbt_intercom
+  # - dbt_iterable
+  # - dbt_jira
+  # - dbt_klaviyo 
+  # - dbt_lever
+  # - dbt_linkedin
+  # - dbt_linkedin_pages
+  # - dbt_mailchimp
+  # - dbt_marketo
+  # - dbt_microsoft_ads
+  # - dbt_mixpanel
+  # - dbt_netsuite
+  # - dbt_pardot
+  # - dbt_pendo
+  # - dbt_pinterest
+  # - dbt_quickbooks
+  # - dbt_sage_intacct -- in dev
+  # - dbt_salesforce
+  # - dbt_shopify
+  # - dbt_snapchat_ads
+  # - dbt_stripe
+  # - dbt_tiktok_ads
+  # - dbt_twitter
+  # - dbt_twitter_organic
+  # - dbt_xero
+  # - dbt_youtube_analytics
+  # - dbt_zendesk
+  # - dbt_apple_search_ads_source
+  # - dbt_asana_source
+  # - dbt_facebook_ads_source
+  # - dbt_facebook_pages_source
+  # - dbt_github_source
+  # - dbt_google_ads_source
+  # - dbt_greenhouse_source
+  # - dbt_hubspot_source
+  # - dbt_instagram_business_source
+  # - dbt_intercom_source
+  # - dbt_iterable_source
+  # - dbt_jira_source
+  # - dbt_klaviyo_source
+  # - dbt_lever_source
+  # - dbt_linkedin_source
+  # - dbt_linkedin_pages_source
+  # - dbt_mailchimp_source
+  # - dbt_marketo_source
+  # - dbt_microsoft_ads_source
+  # - dbt_netsuite_source
+  # - dbt_pardot_source
+  # - dbt_pendo_source
+  # - dbt_pinterest_source
+  # - dbt_quickbooks_source
+  # - dbt_sage_intacct_source -- in dev
+  # - dbt_salesforce_source
+  # - dbt_shopify_source
+  # - dbt_snapchat_ads_source
+  # - dbt_stripe_source
+  # - dbt_tiktok_ads_source
+  # - dbt_twitter_source
+  # - dbt_twitter_organic_source
+  # - dbt_xero_source
+  # - dbt_youtube_analytics_source
+  # - dbt_zendesk_source
+  # - dbt_salesforce_formula_utils
+  # - dbt_facebook_ads_creative_history
+  # - dbt_ad_reporting
+  # - dbt_shopify_holistic_reporting
+  # - dbt_social_media_reporting
