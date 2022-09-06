@@ -78,40 +78,44 @@ def update_packages(
 def update_project(
     repo: github.Repository.Repository, branch_name: str, config: str
 ) -> None:
-    project_content = repo.get_contents("dbt_project.yml")
-    project = ruamel.yaml.load(
-        project_content.decoded_content,
-        Loader=ruamel.yaml.RoundTripLoader,
-        preserve_quotes=True,
-    )
+    files = ["dbt_project.yml","integration_tests/dbt_project.yml"]
+    for f in files:
+        project_content = repo.get_contents(f)
+        project = ruamel.yaml.load(
+            project_content.decoded_content,
+            Loader=ruamel.yaml.RoundTripLoader,
+            preserve_quotes=True,
+        )
 
-    project["require-dbt-version"] = config["require-dbt-version"]
+        # project["require-dbt-version"] = config["require-dbt-version"]
+        try:
+            current_version = project["version"]
+            bump_type = config["version-bump-type"]
 
-    current_version = project["version"]
-    bump_type = config["version-bump-type"]
+            current_version_split = current_version.split(".")
 
-    current_version_split = current_version.split(".")
+            if bump_type == "patch":
+                current_version_split[2] = str(int(current_version_split[2]) + 1)
+            elif bump_type == "minor":
+                current_version_split[1] = str(int(current_version_split[1]) + 1)
+                current_version_split[2] = "0"
+            elif bump_type == "major":
+                current_version_split[0] = str(int(current_version_split[0]) + 1)
+                current_version_split[1] = "0"
+                current_version_split[2] = "0"
 
-    if bump_type == "patch":
-        current_version_split[2] = str(int(current_version_split[2]) + 1)
-    elif bump_type == "minor":
-        current_version_split[1] = str(int(current_version_split[1]) + 1)
-        current_version_split[2] = "0"
-    elif bump_type == "major":
-        current_version_split[0] = str(int(current_version_split[0]) + 1)
-        current_version_split[1] = "0"
-        current_version_split[2] = "0"
+            new_version = ".".join(current_version_split)
+            project["version"] = new_version
 
-    new_version = ".".join(current_version_split)
-    project["version"] = new_version
-
-    repo.update_file(
-        path=project_content.path,
-        message="Updating require-dbt-version",
-        content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper),
-        sha=project_content.sha,
-        branch=branch_name,
-    )
+            repo.update_file(
+                path=project_content.path,
+                message="Updating dbt version",
+                content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper, width=10000),
+                sha=project_content.sha,
+                branch=branch_name,
+            )
+        except:
+            print("dbt project.yml files not found.")
 
 
 def update_requirements(
@@ -137,6 +141,30 @@ def update_requirements(
             branch=branch_name,
         )
 
+def get_files(
+    repo: github.Repository.Repository, branch_name: str, default_branch: str, store_files: list
+) -> None:
+    
+    repo_contents = repo.get_contents("")
+    while len(repo_contents) > 1:
+        file_content = repo_contents.pop(0)
+        if file_content.type=='dir':
+            repo_contents.extend(repo.get_contents(file_content.path))
+        else :
+            # print(file_content.name)
+            store_files.append(file_content.name)
+
+def replace_string(
+    repo: github.Repository.Repository, branch_name: str, default_branch: str, store_files: list
+) -> None:
+        files = ["util_example.sql"]
+        for f in files:
+            project_content = repo.get_contents(f)
+            # project = ruamel.yaml.load(
+            #     project_content.decoded_content,
+            #     Loader=ruamel.yaml.RoundTripLoader,
+            #     preserve_quotes=True,
+            # )
 
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
@@ -168,20 +196,27 @@ def create_parser() -> argparse.ArgumentParser:
 def main():
     parser = create_parser()
     args = parser.parse_args()
+    file_list = []
 
     # Setup
     branch_name = set_branch_name()
     creds = load_credentials()
     config = load_configurations()
     client = get_github_client(creds["access_token"])
+    # print(config)
 
     # Iterate through repos
-    for repo_name in config["repositories"][args.repo_type]:
+    for repo_name in config["repositories"]:
+        print(repo_name)
         repo, default_branch = setup_repo(client, repo_name, branch_name)
-        update_packages(repo, branch_name, config)
-        update_project(repo, branch_name, config)
-        update_requirements(repo, branch_name, config)
-        open_pull_request(repo, branch_name, default_branch)
+        get_files(repo, branch_name, config, file_list)
+        # print(file_list)
+        replace_string(repo, branch_name, config, file_list)
+        # print(branch_name)
+        # update_packages(repo, branch_name, config)
+        # update_project(repo, branch_name, config)
+    #     update_requirements(repo, branch_name, config)
+    #     open_pull_request(repo, branch_name, default_branch)
 
 
 if __name__ == "__main__":
