@@ -176,17 +176,16 @@ def update_packages(
         )
 
         for package in packages["packages"]:
-            if "package" in package and package['package'] == 'fivetran/fivetran_utils':
-                package['version'] = config["fivetran-utils-version"]
+            if "package" in package and package["package"] == 'fivetran/fivetran_utils':
+                package["version"] = config['fivetran-utils-version']
 
         repo.update_file(
             path=packages_content.path,
-            message="Updating Fivetran Utils Dependencies",
+            message="Updating package dependencies",
             content=ruamel.yaml.dump(packages, Dumper=ruamel.yaml.RoundTripDumper),
             sha=packages_content.sha,
             branch=branch_name,
         )
-
     except github.GithubException:
         print("'packages.yml' not found in repo.")
 
@@ -241,7 +240,7 @@ def main():
         origin.push(new_branch)
 
         update_project(repo, branch_name, config)
-        update_packages(repo, branch_name, config)  
+        update_packages(repo, branch_name, config)
         open_pull_request(repo, branch_name, default_branch)
 
 if __name__ == "__main__":
