@@ -1,17 +1,21 @@
+from multiprocessing import AuthenticationError
 import github
 import yaml
-import hashlib
-import time
-import argparse
 import ruamel.yaml
+import os
+import git
+import json
+import pathlib
 
 
-def set_branch_name() -> str:
-    hash = hashlib.sha1()
-    hash.update(str(time.time()).encode("utf-8"))
-    branch_name = "MagicBot_" + hash.hexdigest()[:10]
-    return branch_name
+class Author:
+    name: str
+    email: str
 
+def set_defaults() -> str:
+    branch_name = "MagicBot/" + "dbt-utils-cross-db-migration"
+    commit_message = "Updates for dbt-utils to dbt-core cross-db macro migration"
+    return branch_name, commit_message
 
 def load_credentials() -> dict:
     with open("credentials.yml") as file:
@@ -25,23 +29,22 @@ def get_github_client(access_token: str) -> github.Github:
 
 def load_configurations() -> dict:
     with open("package_manager.yml") as file:
-        config = ruamel.yaml.load(
-            file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True
-        )
+        config = ruamel.yaml.load(file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)        
     return config
 
-
-def setup_repo(client: github.Github, repo_name: str, branch_name: str):
+def setup_repo(
+    client: github.Github, repo_name: str, branch_name: str
+) -> github.Repository.Repository:
     repo = client.get_repo("Fivetran/" + repo_name)
     try:
-        master_sha = repo.get_branch(branch="master").commit.sha
         default_branch = "master"
+        master_sha = repo.get_branch(branch=default_branch).commit.sha
     except:
-        master_sha = repo.get_branch(branch="main").commit.sha
         default_branch = "main"
-    repo.create_git_ref(ref="refs/heads/" + branch_name, sha=master_sha)
+        master_sha = repo.get_branch(branch=default_branch).commit.sha
+        default_branch = "main"
+    # repo.create_git_ref(ref="refs/heads/" + branch_name, sha=master_sha)
     return repo, default_branch
-
 
 def update_packages(
     repo: github.Repository.Repository, branch_name: str, config: dict
@@ -74,6 +77,48 @@ def update_packages(
     except github.GithubException:
         print("'packages.yml' not found in repo.")
 
+def get_file_paths(repo: github.Repository.Repository) -> list:
+    
+    file_path_list = []
+    repo_contents = repo.get_contents("")
+    while len(repo_contents) > 1:
+        file_in_dir = repo_contents.pop(0)
+        if file_in_dir.type=='dir':
+            repo_contents.extend(repo.get_contents(file_in_dir.path))
+        else :
+            if not file_in_dir.name.endswith('tmp.sql') and file_in_dir.name.endswith('.sql'):
+                file_path_list.append(file_in_dir.path)
+    return (file_path_list)
+
+def clone_repo(gh_link: str, path_to_repository: str, ssh_key: str) -> None:
+    try:
+        branch = "master"
+        cloned_repository = git.Repo.clone_from(gh_link, path_to_repository, branch=branch,
+                                            env={"GIT_SSH_COMMAND": 'ssh -i ' + ssh_key})
+    except:
+        branch = "main"
+        cloned_repository = git.Repo.clone_from(gh_link, path_to_repository, branch=branch,
+                                env={"GIT_SSH_COMMAND": 'ssh -i ' + ssh_key})
+    return cloned_repository, branch
+
+def find_and_replace(file_paths: list, find_and_replace_list: list, path_to_repository: str, cloned_repository) -> None:
+    for checked_file in file_paths:
+        path_to_repository_file = os.path.join(path_to_repository, checked_file)
+        repo_file = pathlib.Path(path_to_repository_file)
+        if repo_file.exists():
+            for texts in find_and_replace_list:
+                text_to_find = "dbt_utils." + texts
+                text_to_replace = "dbt." + texts
+                file = open(path_to_repository_file, 'r')
+                current_file_data = file.read()
+                file.close()
+                new_file_data = current_file_data.replace(text_to_find, text_to_replace)
+                file = open(path_to_repository_file, 'w')
+                file.write(new_file_data)
+                file.close()
+            cloned_repository.index.add(path_to_repository_file)
+        else:
+            print("Ignoring "+path_to_repository_file+". Not found")
 
 def update_project(
     repo: github.Repository.Repository, branch_name: str, config: str
@@ -116,69 +161,47 @@ def update_project(
             )
         except:
             print("dbt project.yml files not found.")
+    
+    return(new_version)
 
-
-def update_requirements(
-    repo: github.Repository.Repository, branch_name: str, config: str
+def update_packages(
+    repo: github.Repository.Repository, branch_name: str, config: dict
 ) -> None:
     try:
-        requirements_content = repo.get_contents("integration_tests/requirements.txt")
-        new_content = ""
-        for requirement in config["requirements"]:
-            new_content += f"{requirement['name']}=={requirement['version']}\n"
+        packages_content = repo.get_contents("packages.yml")
+        packages = ruamel.yaml.load(
+            packages_content.decoded_content,
+            Loader=ruamel.yaml.RoundTripLoader,
+            preserve_quotes=True,
+        )
+
+        for package in packages["packages"]:
+            if "package" in package and package['package'] == 'fivetran/fivetran_utils':
+                package['version'] = config["fivetran-utils-version"]
+
         repo.update_file(
-            path=requirements_content.path,
-            message="Updating dbt version in requirements.txt",
-            content=new_content,
-            sha=requirements_content.sha,
+            path=packages_content.path,
+            message="Updating Fivetran Utils Dependencies",
+            content=ruamel.yaml.dump(packages, Dumper=ruamel.yaml.RoundTripDumper),
+            sha=packages_content.sha,
             branch=branch_name,
         )
+
     except github.GithubException:
-        repo.create_file(
-            path="integration_tests/requirements.txt",
-            message="Updating dbt version in requirements.txt",
-            content=new_content,
-            branch=branch_name,
-        )
-
-def get_files(
-    repo: github.Repository.Repository, branch_name: str, default_branch: str, store_files: list
-) -> None:
-    
-    repo_contents = repo.get_contents("")
-    while len(repo_contents) > 1:
-        file_content = repo_contents.pop(0)
-        if file_content.type=='dir':
-            repo_contents.extend(repo.get_contents(file_content.path))
-        else :
-            # print(file_content.name)
-            store_files.append(file_content.name)
-
-def replace_string(
-    repo: github.Repository.Repository, branch_name: str, default_branch: str, store_files: list
-) -> None:
-        files = ["util_example.sql"]
-        for f in files:
-            project_content = repo.get_contents(f)
-            # project = ruamel.yaml.load(
-            #     project_content.decoded_content,
-            #     Loader=ruamel.yaml.RoundTripLoader,
-            #     preserve_quotes=True,
-            # )
+        print("'packages.yml' not found in repo.")
 
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
 ) -> None:
     body = """
     #### This pull request was created automatically 🎉
-
     Before merging this PR:
     - [ ] Verify that all the tests pass.
     - [ ] Tag a release 
     """
 
     pull = repo.create_pull(
-        title="[MagicBot] Bumping package version",
+        title="Updates for dbt-utils to dbt-core cross-db macro migration",
         body=body,
         head=branch_name,
         base=default_branch,
@@ -186,38 +209,40 @@ def open_pull_request(
 
     print(pull.html_url)
 
-
-def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="dbt-package-manager")
-    parser.add_argument("--repo-type", required=True)
-    return parser
-
-
 def main():
-    parser = create_parser()
-    args = parser.parse_args()
-    file_list = []
-
-    # Setup
-    branch_name = set_branch_name()
+    ## Setup
+    branch_name, commit_message = set_defaults()
     creds = load_credentials()
     config = load_configurations()
     client = get_github_client(creds["access_token"])
-    # print(config)
+    write_to_directory = "repositories"
+    repository_author = Author 
+    repository_author.name = creds["repository_author_name"]
+    repository_author.email = creds["repository_author_email"]
+    ssh_key = creds["ssh_key"]
 
-    # Iterate through repos
+    ## Iterate through repos
     for repo_name in config["repositories"]:
-        print(repo_name)
+        ## Not sure why default branch here doesn't work
         repo, default_branch = setup_repo(client, repo_name, branch_name)
-        get_files(repo, branch_name, config, file_list)
-        # print(file_list)
-        replace_string(repo, branch_name, config, file_list)
-        # print(branch_name)
-        # update_packages(repo, branch_name, config)
-        # update_project(repo, branch_name, config)
-    #     update_requirements(repo, branch_name, config)
-    #     open_pull_request(repo, branch_name, default_branch)
+        file_paths = get_file_paths(repo)
+        gh_link = "git@github.com:fivetran/" + repo_name + ".git"
+        path_to_repository = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            write_to_directory + '/' + repo_name )
 
+        cloned_repository, default_branch = clone_repo(gh_link, path_to_repository, ssh_key)
+        new_branch = cloned_repository.create_head(branch_name)
+        new_branch.checkout()
+
+        # Find and Replace values in config and lump into one commit
+        find_and_replace(file_paths, config["find-and-replace-list"], path_to_repository, cloned_repository)
+        cloned_repository.index.commit(commit_message.format(branch_name), author=repository_author)
+        origin = cloned_repository.remote(name='origin')
+        origin.push(new_branch)
+
+        update_project(repo, branch_name, config)
+        update_packages(repo, branch_name, config)  
+        open_pull_request(repo, branch_name, default_branch)
 
 if __name__ == "__main__":
     main()
