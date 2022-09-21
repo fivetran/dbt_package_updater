@@ -132,7 +132,7 @@ def update_project(
             preserve_quotes=True,
         )
 
-        # project["require-dbt-version"] = config["require-dbt-version"]
+        project["require-dbt-version"] = config["require-dbt-version"]
         try:
             current_version = project["version"]
             bump_type = config["version-bump-type"]
