@@ -1,7 +1,7 @@
 repositories:
-  # - dbt_apple_search_ads_source
-  - dbt_marketo ## integration_tests/dbt_project.yml update file works
-  - dbt_jira
+  - dbt_apple_search_ads_source
+  # - dbt_marketo
+  # - dbt_jira
 
 require-dbt-version: [">=1.2.0", "<2.0.0"]
 
@@ -35,8 +35,12 @@ find-and-replace-list:
   - type_int
   - type_numeric
   - type_string
+  - type_boolean
   - type_timestamp
   - current_timestamp
   - current_timestamp_in_utc
+  - array_append
+  - array_concat
+  - array_construct
   - surrogate_key ## keeps the same dispatch
   - spark ## for ymls and sqls

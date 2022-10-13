@@ -171,13 +171,14 @@ def update_project(
 
             repo.update_file(
                 path=project_content.path,
-                message="Updating dbt version "+f,
+                message="Updating dbt version",
                 content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper, width=10000),
                 sha=project_content.sha,
                 branch=branch_name,
             )
-        except:
+        except github.GithubException as error:
             print("dbt project.yml files not found.")
+            print("error: ", error)
 
 def update_packages(
     repo: github.Repository.Repository, branch_name: str, config: dict
@@ -226,7 +227,7 @@ def add_files(repo: github.Repository.Repository, branch_name: str, files_to_add
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
 ) -> None:
-    body = """This pull request was created automatically 🎉\nBefore merging this PR:\n- [ ] Verify that all the tests pass.\n- [ ] Tag a release \n
+    body = """This pull request was created automatically 🎉\nBefore merging this PR (refer to Detailed Update Sheet 10/2022 for more information):\n- [ ] Verify `dbt_project.yml` & `integration_tests/dbt_project.yml` versions are properly bumped\n- [ ] Spot check for dispatch updates, `dbt_utils.macro` -> `dbt.macro` \n- [ ] Verify that `.circleci` directory has been removed\n- [ ] Verify `integration_tests/requirements.txt` adapters have been updated to 1.2.0 and dbt-databricks is added\n- [ ] Verify `.buildkite` directory has been added with the following: `hooks/pre-command`, `scripts/run_models.sh`, `pipeline.yml`\n- [ ] Update `packages.yml`, will need to bump source package (FT utils should be bumped)\n- [ ] Update `.buildkite/scripts/run_models.sh` with vars as applicable, if N/A then remove relevant lines from script\n- [ ] Remove databricks block from `.buildkite/pipeline.yml` if package is incompatible\n- [ ] Update schema names in `integration_tests/ci/sample.profiles.yml`\n- [ ] Update "spark" strings where applicable\n- [ ] Update `CHANGELOG` [template](https://github.com/fivetran/dbt_package_updater/blob/update/dbt-utils-crossdb-migration/CHANGELOG.md) and remove surrogate keys if not applicable to package\n- [ ] Update `README` for dbt version badge, install package version range and dependencies for: Fivetran_utils, dbt-utils and source packages\n- [ ] Regenerate docs
     """
 
     pull = repo.create_pull(
@@ -263,7 +264,6 @@ def main():
         new_branch = cloned_repository.create_head(branch_name)
         new_branch.checkout()
 
-        # Find and Replace macros in configs for all sql files
         find_and_replace(file_paths, config["find-and-replace-list"], path_to_repository, cloned_repository)
         print("Finished replacing values in files...")
         cloned_repository.index.commit(commit_message.format(branch_name), author=repository_author)
@@ -285,7 +285,7 @@ def main():
         files_to_add=['integration_tests/requirements.txt','integration_tests/ci/sample.profiles.yml','.buildkite/pipeline.yml', '.buildkite/scripts/run_models.sh', '.buildkite/hooks/pre-command']
         add_files(repo, branch_name, files_to_add=files_to_add)
         print("Added files...")
-        # open_pull_request(repo, branch_name, default_branch)
+        open_pull_request(repo, branch_name, default_branch)
 
 if __name__ == "__main__":
     main()
