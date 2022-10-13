@@ -42,7 +42,6 @@ def setup_repo(
     except:
         default_branch = "main"
         master_sha = repo.get_branch(branch=default_branch).commit.sha
-        default_branch = "main"
     # repo.create_git_ref(ref="refs/heads/" + branch_name, sha=master_sha)
     return repo, default_branch
 
@@ -86,7 +85,11 @@ def get_file_paths(repo: github.Repository.Repository) -> list:
         if file_in_dir.type=='dir':
             repo_contents.extend(repo.get_contents(file_in_dir.path))
         else :
-            if not file_in_dir.name.endswith('tmp.sql') and file_in_dir.name.endswith('.sql'):
+            if not file_in_dir.name.endswith('tmp.sql') and \
+                not file_in_dir.name.endswith('config.yml') and \
+                not file_in_dir.name.endswith('sample.profiles.yml') and \
+                not file_in_dir.name.endswith('packages.yml') and \
+                (file_in_dir.name.endswith('.sql') or file_in_dir.name.endswith('.yml')):
                 file_path_list.append(file_in_dir.path)
     return (file_path_list)
 
@@ -102,13 +105,26 @@ def clone_repo(gh_link: str, path_to_repository: str, ssh_key: str) -> None:
     return cloned_repository, branch
 
 def find_and_replace(file_paths: list, find_and_replace_list: list, path_to_repository: str, cloned_repository) -> None:
+    num_files_to_update=len(file_paths)
+    num_current_file=0
     for checked_file in file_paths:
+        num_current_file+=1
+        print ("Files find and replaced: " , num_current_file , "/", num_files_to_update)
         path_to_repository_file = os.path.join(path_to_repository, checked_file)
         repo_file = pathlib.Path(path_to_repository_file)
         if repo_file.exists():
             for texts in find_and_replace_list:
                 text_to_find = "dbt_utils." + texts
                 text_to_replace = "dbt." + texts
+                if text_to_find == "dbt_utils.surrogate_key":
+                    text_to_replace = "dbt_utils.generate_surrogate_key"
+                if text_to_find == "dbt_utils.current_timestamp" or text_to_find == "dbt_utils.current_timestamp_in_utc":
+                    ## This is because current_timestamp exists as a subtext of current_timestamp_in_utc so we'll have incorrect find and replacing
+                    text_to_find = text_to_find+"("
+                    text_to_replace = text_to_replace+"_backcompat"+"("
+                if texts == "spark":
+                    text_to_find = "spark"
+                    text_to_replace = "!!!!!!! REPLACE 'spark' WITH 'spark','databricks' OR EQUIV !!!!!!!"
                 file = open(path_to_repository_file, 'r')
                 current_file_data = file.read()
                 file.close()
@@ -132,11 +148,12 @@ def update_project(
             preserve_quotes=True,
         )
 
-        project["require-dbt-version"] = config["require-dbt-version"]
+        if f == "dbt_project.yml":
+            project["require-dbt-version"] = config["require-dbt-version"]
+
         try:
             current_version = project["version"]
             bump_type = config["version-bump-type"]
-
             current_version_split = current_version.split(".")
 
             if bump_type == "patch":
@@ -154,15 +171,13 @@ def update_project(
 
             repo.update_file(
                 path=project_content.path,
-                message="Updating dbt version",
+                message="Updating dbt version "+f,
                 content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper, width=10000),
                 sha=project_content.sha,
                 branch=branch_name,
             )
         except:
             print("dbt project.yml files not found.")
-    
-    return(new_version)
 
 def update_packages(
     repo: github.Repository.Repository, branch_name: str, config: dict
@@ -174,7 +189,7 @@ def update_packages(
             Loader=ruamel.yaml.RoundTripLoader,
             preserve_quotes=True,
         )
-
+        
         for package in packages["packages"]:
             if "package" in package and package["package"] == 'fivetran/fivetran_utils':
                 package["version"] = config['fivetran-utils-version']
@@ -189,14 +204,29 @@ def update_packages(
     except github.GithubException:
         print("'packages.yml' not found in repo.")
 
+def remove_files(repo: github.Repository.Repository, branch_name: str, files_to_remove: list) -> None:
+    try:        
+        for file_path in files_to_remove:
+            old_content = repo.get_contents(file_path) 
+            repo.delete_file(file_path, "deleting file: " + file_path, old_content.sha, branch=branch_name)
+
+    except github.GithubException:
+        print("Removing files failed")
+
+def add_files(repo: github.Repository.Repository, branch_name: str, files_to_add: list) -> None:
+    try:        
+        for file_path in files_to_add:
+            current_file = open("docs/" + file_path, 'r')
+            content = current_file.read()
+            repo.create_file(file_path, "adding file: " + file_path , content, branch=branch_name) # This make three concurrent commits, maybe there is a way to have it wait?
+
+    except github.GithubException:
+        print("Adding files failed")
+
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
 ) -> None:
-    body = """
-    #### This pull request was created automatically 🎉
-    Before merging this PR:
-    - [ ] Verify that all the tests pass.
-    - [ ] Tag a release 
+    body = """This pull request was created automatically 🎉\nBefore merging this PR:\n- [ ] Verify that all the tests pass.\n- [ ] Tag a release \n
     """
 
     pull = repo.create_pull(
@@ -233,15 +263,29 @@ def main():
         new_branch = cloned_repository.create_head(branch_name)
         new_branch.checkout()
 
-        # Find and Replace values in config and lump into one commit
+        # Find and Replace macros in configs for all sql files
         find_and_replace(file_paths, config["find-and-replace-list"], path_to_repository, cloned_repository)
+        print("Finished replacing values in files...")
         cloned_repository.index.commit(commit_message.format(branch_name), author=repository_author)
+        print("Committed changes...")
         origin = cloned_repository.remote(name='origin')
         origin.push(new_branch)
+        print("Pushed to remote...")
 
         update_project(repo, branch_name, config)
+        print("Updated project versions...")
+
         update_packages(repo, branch_name, config)
-        open_pull_request(repo, branch_name, default_branch)
+        print("Updated package versions...")
+
+        files_to_remove=['.circleci/config.yml', 'integration_tests/requirements.txt', 'integration_tests/ci/sample.profiles.yml']
+        remove_files(repo, branch_name, files_to_remove=files_to_remove)
+        print("Removed files...")
+
+        files_to_add=['integration_tests/requirements.txt','integration_tests/ci/sample.profiles.yml','.buildkite/pipeline.yml', '.buildkite/scripts/run_models.sh', '.buildkite/hooks/pre-command']
+        add_files(repo, branch_name, files_to_add=files_to_add)
+        print("Added files...")
+        # open_pull_request(repo, branch_name, default_branch)
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,0 @@
-PyGithub==1.53
-mypy==0.790
-argparse==1.4.0
-ruamel.yaml
-gitdb2==2.0.6
-GitPython==3.0.5
-smmap2==2.0.5
