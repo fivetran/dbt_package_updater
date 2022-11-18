@@ -6,6 +6,7 @@ import os
 import git
 import json
 import pathlib
+import shutil
 
 
 class Author:
@@ -14,7 +15,7 @@ class Author:
 
 def set_defaults() -> str:
     branch_name = "MagicBot/" + "dbt-utils-cross-db-migration"
-    commit_message = "Updates for dbt-utils to dbt-core cross-db macro migration"
+    commit_message = "Update pipeline, CI refs, run models"
     return branch_name, commit_message
 
 def load_credentials() -> dict:
@@ -104,140 +105,41 @@ def clone_repo(gh_link: str, path_to_repository: str, ssh_key: str) -> None:
                                 env={"GIT_SSH_COMMAND": 'ssh -i ' + ssh_key})
     return cloned_repository, branch
 
-def find_and_replace(file_paths: list, find_and_replace_list: list, path_to_repository: str, cloned_repository) -> None:
-    num_files_to_update=len(file_paths)
-    num_current_file=0
+def find_and_replace(file_paths: list, find_and_replace_list: dict, path_to_repository: str, cloned_repository) -> None:
     for checked_file in file_paths:
-        num_current_file+=1
-        print ("Files find and replaced: " , num_current_file , "/", num_files_to_update)
+        print ("Files to update: ", checked_file)
         path_to_repository_file = os.path.join(path_to_repository, checked_file)
         repo_file = pathlib.Path(path_to_repository_file)
         if repo_file.exists():
-            for texts in find_and_replace_list:
-                text_to_find = "dbt_utils." + texts
-                text_to_replace = "dbt." + texts
-                if text_to_find == "dbt_utils.surrogate_key":
-                    text_to_replace = "dbt_utils.generate_surrogate_key"
-                if text_to_find == "dbt_utils.current_timestamp" or text_to_find == "dbt_utils.current_timestamp_in_utc":
-                    ## This is because current_timestamp exists as a subtext of current_timestamp_in_utc so we'll have incorrect find and replacing
-                    text_to_find = text_to_find+"("
-                    text_to_replace = text_to_replace+"_backcompat"+"("
-                if texts == "spark":
-                    text_to_find = "spark"
-                    text_to_replace = "!!!!!!! REPLACE 'spark' WITH 'spark','databricks' OR EQUIV !!!!!!!"
+            text_to_find = find_and_replace_list['find']
+            text_to_replace = find_and_replace_list['replace']
+            if checked_file.endswith('.md'):
+                file = open(path_to_repository_file, 'r', encoding='utf8') 
+            else:
                 file = open(path_to_repository_file, 'r')
-                current_file_data = file.read()
-                file.close()
-                new_file_data = current_file_data.replace(text_to_find, text_to_replace)
+            current_file_data = file.read()
+            file.close()
+            new_file_data = current_file_data.replace(text_to_find, text_to_replace)
+            if checked_file.endswith('.md'):
+                file = open(path_to_repository_file, 'w', encoding='utf8')
+            else:
                 file = open(path_to_repository_file, 'w')
-                file.write(new_file_data)
-                file.close()
+            file.write(new_file_data)
+            file.close()
             cloned_repository.index.add(path_to_repository_file)
         else:
             print("Ignoring "+path_to_repository_file+". Not found")
 
-def update_project(
-    repo: github.Repository.Repository, branch_name: str, config: str
-) -> None:
-    files = ["dbt_project.yml","integration_tests/dbt_project.yml"]
-    for f in files:
-        project_content = repo.get_contents(f)
-        project = ruamel.yaml.load(
-            project_content.decoded_content,
-            Loader=ruamel.yaml.RoundTripLoader,
-            preserve_quotes=True,
-        )
-
-        if f == "dbt_project.yml":
-            project["require-dbt-version"] = config["require-dbt-version"]
-
-        try:
-            current_version = project["version"]
-            bump_type = config["version-bump-type"]
-            current_version_split = current_version.split(".")
-
-            if bump_type == "patch":
-                current_version_split[2] = str(int(current_version_split[2]) + 1)
-            elif bump_type == "minor":
-                current_version_split[1] = str(int(current_version_split[1]) + 1)
-                current_version_split[2] = "0"
-            elif bump_type == "major":
-                current_version_split[0] = str(int(current_version_split[0]) + 1)
-                current_version_split[1] = "0"
-                current_version_split[2] = "0"
-
-            new_version = ".".join(current_version_split)
-            project["version"] = new_version
-
-            repo.update_file(
-                path=project_content.path,
-                message="Updating dbt version",
-                content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper, width=10000),
-                sha=project_content.sha,
-                branch=branch_name,
-            )
-        except github.GithubException as error:
-            print("dbt project.yml files not found.")
-            print("error: ", error)
-
-def update_packages(
-    repo: github.Repository.Repository, branch_name: str, config: dict
-) -> None:
-    try:
-        packages_content = repo.get_contents("packages.yml")
-        packages = ruamel.yaml.load(
-            packages_content.decoded_content,
-            Loader=ruamel.yaml.RoundTripLoader,
-            preserve_quotes=True,
-        )
-        
-        for package in packages["packages"]:
-            if "package" in package and package["package"] == 'fivetran/fivetran_utils':
-                package["version"] = config['fivetran-utils-version']
-
-        repo.update_file(
-            path=packages_content.path,
-            message="Updating package dependencies",
-            content=ruamel.yaml.dump(packages, Dumper=ruamel.yaml.RoundTripDumper),
-            sha=packages_content.sha,
-            branch=branch_name,
-        )
-    except github.GithubException:
-        print("'packages.yml' not found in repo.")
-
-def remove_files(repo: github.Repository.Repository, branch_name: str, files_to_remove: list) -> None:
-    try:        
-        for file_path in files_to_remove:
-            old_content = repo.get_contents(file_path) 
-            repo.delete_file(file_path, "deleting file: " + file_path, old_content.sha, branch=branch_name)
-
-    except github.GithubException:
-        print("Removing files failed")
-
-def add_files(repo: github.Repository.Repository, branch_name: str, files_to_add: list) -> None:
-    try:        
-        for file_path in files_to_add:
-            current_file = open("docs/" + file_path, 'r')
-            content = current_file.read()
-            repo.create_file(file_path, "adding file: " + file_path , content, branch=branch_name) # This make three concurrent commits, maybe there is a way to have it wait?
-
-    except github.GithubException:
-        print("Adding files failed")
-
-def open_pull_request(
-    repo: github.Repository.Repository, branch_name: str, default_branch: str
-) -> None:
-    body = """This pull request was created automatically 🎉\nBefore merging this PR (refer to Detailed Update Sheet 10/2022 for more information):\n- [ ] Verify `dbt_project.yml` & `integration_tests/dbt_project.yml` versions are properly bumped\n- [ ] Spot check for dispatch updates, `dbt_utils.macro` -> `dbt.macro` \n- [ ] Verify that `.circleci` directory has been removed\n- [ ] Verify `integration_tests/requirements.txt` adapters have been updated to 1.2.0 and dbt-databricks is added\n- [ ] Verify `.buildkite` directory has been added with the following: `hooks/pre-command`, `scripts/run_models.sh`, `pipeline.yml`\n- [ ] Update `packages.yml`, will need to bump source package (FT utils should be bumped)\n- [ ] Update `.buildkite/scripts/run_models.sh` with vars as applicable, if N/A then remove relevant lines from script\n- [ ] Remove databricks block from `.buildkite/pipeline.yml` if package is incompatible\n- [ ] Update schema names in `integration_tests/ci/sample.profiles.yml`\n- [ ] Update "spark" strings where applicable\n- [ ] Update `CHANGELOG` [template](https://github.com/fivetran/dbt_package_updater/blob/update/dbt-utils-crossdb-migration/CHANGELOG.md) and remove surrogate keys if not applicable to package\n- [ ] Update `README` for dbt version badge, install package version range and dependencies for: Fivetran_utils, dbt-utils and source packages\n- [ ] Regenerate docs
-    """
-
-    pull = repo.create_pull(
-        title="Updates for dbt-utils to dbt-core cross-db macro migration",
-        body=body,
-        head=branch_name,
-        base=default_branch,
-    )
-
-    print(pull.html_url)
+def replace_files(file_paths: list, path_to_repository: str, cloned_repository) -> None:
+    for checked_file in file_paths:
+        print ("Files to update: ", checked_file)
+        path_to_repository_file = os.path.join(path_to_repository, checked_file)
+        path_to_repository_file_placeholder = path_to_repository_file.replace('pull_request_template', 'original_pull_request_template')
+        os.rename(path_to_repository_file, path_to_repository_file_placeholder)
+        file_to_copy='docs/.github/pull_request_template.md'
+        shutil.copy(file_to_copy, path_to_repository_file)
+        os.remove(path_to_repository_file_placeholder)
+        cloned_repository.index.add(path_to_repository_file)
 
 def main():
     ## Setup
@@ -253,39 +155,50 @@ def main():
 
     ## Iterate through repos
     for repo_name in config["repositories"]:
+        print ("PR update in progress for: ", repo_name)
         ## Not sure why default branch here doesn't work
         repo, default_branch = setup_repo(client, repo_name, branch_name)
-        file_paths = get_file_paths(repo)
         gh_link = "git@github.com:fivetran/" + repo_name + ".git"
         path_to_repository = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             write_to_directory + '/' + repo_name )
 
         cloned_repository, default_branch = clone_repo(gh_link, path_to_repository, ssh_key)
-        new_branch = cloned_repository.create_head(branch_name)
-        new_branch.checkout()
 
-        find_and_replace(file_paths, config["find-and-replace-list"], path_to_repository, cloned_repository)
+        ## checkout on current PR working repo
+        cloned_repository.git.checkout(branch_name)
+
+        pipeline = ['.buildkite/pipeline.yml']
+        find_and_replace_list = {'find': ':upside_down_face:', 'replace': ':bricks:'}
+        find_and_replace(file_paths=pipeline, \
+            find_and_replace_list=find_and_replace_list, \
+                path_to_repository=path_to_repository, \
+                cloned_repository=cloned_repository)
+        
+        sample_profs = ['integration_tests/ci/sample.profiles.yml']
+        find_and_replace_list = {'find': 'CircleCI', 'replace': 'Buildkite'}
+        find_and_replace(file_paths=sample_profs, \
+            find_and_replace_list=find_and_replace_list, \
+                path_to_repository=path_to_repository, \
+                cloned_repository=cloned_repository)
+        
+        pr_template = ['.github/pull_request_template.md']
+        replace_files(file_paths=pr_template, \
+                path_to_repository=path_to_repository, \
+                cloned_repository=cloned_repository)
+
+        run_models = ['.buildkite/scripts/run_models.sh']
+        find_and_replace_list = {'find': 'apt-get update', 'replace': 'set -euo pipefail\n\napt-get update'}
+        find_and_replace(file_paths=run_models, \
+            find_and_replace_list=find_and_replace_list, \
+                path_to_repository=path_to_repository, \
+                cloned_repository=cloned_repository)
+
         print("Finished replacing values in files...")
         cloned_repository.index.commit(commit_message.format(branch_name), author=repository_author)
         print("Committed changes...")
         origin = cloned_repository.remote(name='origin')
-        origin.push(new_branch)
+        origin.push(branch_name)
         print("Pushed to remote...")
-
-        update_project(repo, branch_name, config)
-        print("Updated project versions...")
-
-        update_packages(repo, branch_name, config)
-        print("Updated package versions...")
-
-        files_to_remove=['.circleci/config.yml', 'integration_tests/requirements.txt', 'integration_tests/ci/sample.profiles.yml']
-        remove_files(repo, branch_name, files_to_remove=files_to_remove)
-        print("Removed files...")
-
-        files_to_add=['integration_tests/requirements.txt','integration_tests/ci/sample.profiles.yml','.buildkite/pipeline.yml', '.buildkite/scripts/run_models.sh', '.buildkite/hooks/pre-command']
-        add_files(repo, branch_name, files_to_add=files_to_add)
-        print("Added files...")
-        open_pull_request(repo, branch_name, default_branch)
 
 if __name__ == "__main__":
     main()

@@ -1,9 +1,95 @@
 repositories:
-  - dbt_apple_search_ads_source
-  # - dbt_marketo
-  # - dbt_jira
+## Round 1 updates
+  # - dbt_app_reporting ## FINAL UPDATER COMPLETE
+  # - dbt_apple_search_ads ## FINAL UPDATER COMPLETE
+  # - dbt_apple_search_ads_source ## FINAL UPDATER COMPLETE
+  # - dbt_apple_store ## FINAL UPDATER COMPLETE
+  # - dbt_apple_store_source ## FINAL UPDATER COMPLETE
+  # - dbt_asana ## FINAL UPDATER COMPLETE
+  # - dbt_asana_source ## FINAL UPDATER COMPLETE
+  # - dbt_facebook_ads ## FINAL UPDATER COMPLETE
+  # - dbt_facebook_ads_creative_history ## FINAL UPDATER COMPLETE
+  # - dbt_facebook_ads_source ## FINAL UPDATER COMPLETE
+  # - dbt_facebook_pages ## FINAL UPDATER COMPLETE
+  # - dbt_facebook_pages_source ## FINAL UPDATER COMPLETE
+  # - dbt_fivetran_log ## FINAL UPDATER COMPLETE
+  # - dbt_github
+  # - dbt_github_source
+  # - dbt_google_ads ## FINAL UPDATER COMPLETE
+  # - dbt_google_ads_source ## FINAL UPDATER COMPLETE
+  # - dbt_google_play ## FINAL UPDATER COMPLETE
+  # - dbt_google_play_source ## FINAL UPDATER COMPLETE
+  # - dbt_greenhouse ## FINAL UPDATER COMPLETE
+  # - dbt_greenhouse_source ## FINAL UPDATER COMPLETE
+  # - dbt_instagram_business ## FINAL UPDATER COMPLETE
+  # - dbt_instagram_business_source ## FINAL UPDATER COMPLETE
+  # - dbt_intercom ## FINAL UPDATER COMPLETE
+  # - dbt_intercom_source ## FINAL UPDATER COMPLETE
+  - dbt_iterable 
+  - dbt_iterable_source
+  # - dbt_jira ## FINAL UPDATER COMPLETE
+  # - dbt_jira_source ## FINAL UPDATER COMPLETE
+  # - dbt_lever ## FINAL UPDATER COMPLETE
+  # - dbt_lever_source ## FINAL UPDATER COMPLETE
+  # - dbt_linkedin ## FINAL UPDATER COMPLETE
+  # - dbt_linkedin_pages ## FINAL UPDATER COMPLETE
+  # - dbt_linkedin_pages_source ## FINAL UPDATER COMPLETE
+  # - dbt_linkedin_source ## FINAL UPDATER COMPLETE
+  # - dbt_mailchimp ## FINAL UPDATER COMPLETE
+  # - dbt_mailchimp_source ## FINAL UPDATER COMPLETE
+  # - dbt_microsoft_ads ## FINAL UPDATER COMPLETE
+  # - dbt_microsoft_ads_source ## FINAL UPDATER COMPLETE
+  # - dbt_mixpanel ## FINAL UPDATER COMPLETE
+  # - dbt_netsuite ## FINAL UPDATER COMPLETE
+  # - dbt_netsuite_source ## FINAL UPDATER COMPLETE
+  # - dbt_pardot ## FINAL UPDATER COMPLETE
+  # - dbt_pardot_source ## FINAL UPDATER COMPLETE
+  # - dbt_pendo ## FINAL UPDATER COMPLETE
+  # - dbt_pendo_source ## FINAL UPDATER COMPLETE
+  # - dbt_quickbooks ## FINAL UPDATER COMPLETE
+  # - dbt_quickbooks_source ## FINAL UPDATER COMPLETE
+  # - dbt_sage_intacct ## FINAL UPDATER COMPLETE
+  # - dbt_sage_intacct_source ## FINAL UPDATER COMPLETE
+  # - dbt_shopify ## FINAL UPDATER COMPLETE
+  # - dbt_shopify_source ## FINAL UPDATER COMPLETE
+  # - dbt_snapchat_ads ## FINAL UPDATER COMPLETE
+  # - dbt_snapchat_ads_source ## FINAL UPDATER COMPLETE
+  # - dbt_social_media_reporting ## FINAL UPDATER COMPLETE
+  # - dbt_stripe ## FINAL UPDATER COMPLETE
+  # - dbt_stripe_source ## FINAL UPDATER COMPLETE
+  # - dbt_tiktok_ads ## FINAL UPDATER COMPLETE
+  # - dbt_tiktok_ads_source ## FINAL UPDATER COMPLETE
+  # - dbt_twitter ## FINAL UPDATER COMPLETE
+  # - dbt_twitter_organic ## FINAL UPDATER COMPLETE
+  # - dbt_twitter_organic_source ## FINAL UPDATER COMPLETE
+  # - dbt_twitter_source ## FINAL UPDATER COMPLETE
+  # - dbt_xero ## FINAL UPDATER COMPLETE
+  # - dbt_xero_source ## FINAL UPDATER COMPLETE
+  # - dbt_youtube_analytics ## FINAL UPDATER COMPLETE
+  # - dbt_youtube_analytics_source ## FINAL UPDATER COMPLETE
+  # - dbt_zendesk_source ## FINAL UPDATER COMPLETE
+  # - dbt_hubspot ## FINAL UPDATER COMPLETE
+  # - dbt_hubspot_source ## FINAL UPDATER COMPLETE
+  # - dbt_klaviyo ## FINAL UPDATER COMPLETE
+  # - dbt_klaviyo_source ## FINAL UPDATER COMPLETE
+  # - dbt_marketo ## FINAL UPDATER COMPLETE
+  # - dbt_marketo_source ## FINAL UPDATER COMPLETE
+  # - dbt_shopify_holistic_reporting ## FINAL UPDATER COMPLETE
+  # - dbt_salesforce_formula_utils ## FINAL UPDATER COMPLETE
+  # - dbt_recurly ## FINAL UPDATER COMPLETE
+  # - dbt_recurly_source ## FINAL UPDATER COMPLETE
+  # - dbt_amplitude ## FINAL UPDATER COMPLETE
+  # - dbt_amplitude_source ## FINAL UPDATER COMPLETE
 
-require-dbt-version: [">=1.2.0", "<2.0.0"]
+  ## Parsing errors for dbt project & packages.yml, need to update manually
+  # - dbt_ad_reporting ## FINAL UPDATER COMPLETE
+  # - dbt_pinterest ## FINAL UPDATER COMPLETE
+  # - dbt_pinterest_source ## FINAL UPDATER COMPLETE
+  # - dbt_salesforce ## FINAL UPDATER COMPLETE
+  # - dbt_salesforce_source ## FINAL UPDATER COMPLETE
+  # - dbt_zendesk ## FINAL UPDATER COMPLETE
+
+require-dbt-version: [">=1.3.0", "<2.0.0"]
 
 fivetran-utils-version: [">=0.4.0", "<0.5.0"]
 
