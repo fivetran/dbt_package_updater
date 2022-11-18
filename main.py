@@ -6,6 +6,7 @@ import os
 import git
 import json
 import pathlib
+import csv
 
 
 class Author:
@@ -13,7 +14,7 @@ class Author:
     email: str
 
 def set_defaults() -> str:
-    branch_name = "MagicBot/" + "dbt-utils-cross-db-migration"
+    branch_name = "MagicBot/" + "dbt-utils-dep-check"
     commit_message = "Updates for dbt-utils to dbt-core cross-db macro migration"
     return branch_name, commit_message
 
@@ -40,7 +41,7 @@ def setup_repo(
         default_branch = "master"
         master_sha = repo.get_branch(branch=default_branch).commit.sha
     except:
-        default_branch = "main"
+        default_branch = "MagicBot/dbt-utils-cross-db-migration"
         master_sha = repo.get_branch(branch=default_branch).commit.sha
     # repo.create_git_ref(ref="refs/heads/" + branch_name, sha=master_sha)
     return repo, default_branch
@@ -68,7 +69,7 @@ def update_packages(
 
         repo.update_file(
             path=packages_content.path,
-            message="Updating package dependendcies",
+            message="Updating package dependencies",
             content=ruamel.yaml.dump(packages, Dumper=ruamel.yaml.RoundTripDumper),
             sha=packages_content.sha,
             branch=branch_name,
@@ -93,45 +94,53 @@ def get_file_paths(repo: github.Repository.Repository) -> list:
                 file_path_list.append(file_in_dir.path)
     return (file_path_list)
 
-def clone_repo(gh_link: str, path_to_repository: str, ssh_key: str) -> None:
+def clone_repo(gh_link: str, path_to_repository: str, ssh_key: str, branch_name: str) -> None:
     try:
         branch = "master"
-        cloned_repository = git.Repo.clone_from(gh_link, path_to_repository, branch=branch,
+        cloned_repository = git.Repo.clone_from(gh_link, path_to_repository, branch=branch_name,
                                             env={"GIT_SSH_COMMAND": 'ssh -i ' + ssh_key})
     except:
         branch = "main"
-        cloned_repository = git.Repo.clone_from(gh_link, path_to_repository, branch=branch,
+        cloned_repository = git.Repo.clone_from(gh_link, path_to_repository, branch=branch_name,
                                 env={"GIT_SSH_COMMAND": 'ssh -i ' + ssh_key})
     return cloned_repository, branch
 
-def find_and_replace(file_paths: list, find_and_replace_list: list, path_to_repository: str, cloned_repository) -> None:
+def find_and_replace(file_paths: list, find_and_replace_list: list, path_to_repository: str, cloned_repository, repo_name: str) -> None:
     num_files_to_update=len(file_paths)
     num_current_file=0
     for checked_file in file_paths:
         num_current_file+=1
-        print ("Files find and replaced: " , num_current_file , "/", num_files_to_update)
+        # print ("Files find and replaced: " , num_current_file , "/", num_files_to_update)
         path_to_repository_file = os.path.join(path_to_repository, checked_file)
         repo_file = pathlib.Path(path_to_repository_file)
         if repo_file.exists():
             for texts in find_and_replace_list:
-                text_to_find = "dbt_utils." + texts
-                text_to_replace = "dbt." + texts
-                if text_to_find == "dbt_utils.surrogate_key":
-                    text_to_replace = "dbt_utils.generate_surrogate_key"
-                if text_to_find == "dbt_utils.current_timestamp" or text_to_find == "dbt_utils.current_timestamp_in_utc":
-                    ## This is because current_timestamp exists as a subtext of current_timestamp_in_utc so we'll have incorrect find and replacing
-                    text_to_find = text_to_find+"("
-                    text_to_replace = text_to_replace+"_backcompat"+"("
-                if texts == "spark":
-                    text_to_find = "spark"
-                    text_to_replace = "!!!!!!! REPLACE 'spark' WITH 'spark','databricks' OR EQUIV !!!!!!!"
+                file = open(path_to_repository_file, 'r')
+                # text_to_find = "dbt_utils." + texts
+                # text_to_replace = "dbt." + texts
+                if texts in file.read():
+                    # print(texts + " -- replaced within " + checked_file + "\n")
+                    f = open('dbt_utils_dependencies.csv', 'a')
+                    writer = csv.writer(f)
+                    data = [repo_name, texts, checked_file]
+                    writer.writerow(data)
+                    f.close()
+                # if repo_file:
+                #     text_to_replace = "dbt_utils.generate_surrogate_key"
+                # if text_to_find == "dbt_utils.current_timestamp" or text_to_find == "dbt_utils.current_timestamp_in_utc":
+                #     ## This is because current_timestamp exists as a subtext of current_timestamp_in_utc so we'll have incorrect find and replacing
+                #     text_to_find = text_to_find+"("
+                #     text_to_replace = text_to_replace+"_backcompat"+"("
+                # if texts == "spark":
+                #     text_to_find = "spark"
+                #     text_to_replace = "!!!!!!! REPLACE 'spark' WITH 'spark','databricks' OR EQUIV !!!!!!!"
                 file = open(path_to_repository_file, 'r')
                 current_file_data = file.read()
                 file.close()
-                new_file_data = current_file_data.replace(text_to_find, text_to_replace)
-                file = open(path_to_repository_file, 'w')
-                file.write(new_file_data)
-                file.close()
+                # new_file_data = current_file_data.replace(text_to_find, text_to_replace)
+                # file = open(path_to_repository_file, 'w')
+                # file.write(new_file_data)
+                # file.close()
             cloned_repository.index.add(path_to_repository_file)
         else:
             print("Ignoring "+path_to_repository_file+". Not found")
@@ -250,42 +259,48 @@ def main():
     repository_author.name = creds["repository_author_name"]
     repository_author.email = creds["repository_author_email"]
     ssh_key = creds["ssh_key"]
+    branch_name = "MagicBot/dbt-utils-cross-db-migration"
 
     ## Iterate through repos
     for repo_name in config["repositories"]:
         ## Not sure why default branch here doesn't work
         repo, default_branch = setup_repo(client, repo_name, branch_name)
+        print(repo_name + ": starting to scan for dbt_utils")
         file_paths = get_file_paths(repo)
         gh_link = "git@github.com:fivetran/" + repo_name + ".git"
         path_to_repository = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             write_to_directory + '/' + repo_name )
 
-        cloned_repository, default_branch = clone_repo(gh_link, path_to_repository, ssh_key)
+        cloned_repository, default_branch = clone_repo(gh_link, path_to_repository, ssh_key, branch_name)
         new_branch = cloned_repository.create_head(branch_name)
+        print(branch_name)
         new_branch.checkout()
 
-        find_and_replace(file_paths, config["find-and-replace-list"], path_to_repository, cloned_repository)
-        print("Finished replacing values in files...")
-        cloned_repository.index.commit(commit_message.format(branch_name), author=repository_author)
-        print("Committed changes...")
-        origin = cloned_repository.remote(name='origin')
-        origin.push(new_branch)
-        print("Pushed to remote...")
+        find_and_replace(file_paths, config["find-and-replace-list"], path_to_repository, cloned_repository, repo_name)
+        print(repo_name + ": completed scanning for dbt_utils\n")
 
-        update_project(repo, branch_name, config)
-        print("Updated project versions...")
 
-        update_packages(repo, branch_name, config)
-        print("Updated package versions...")
+        # print("Finished replacing values in files...")
+        # cloned_repository.index.commit(commit_message.format(branch_name), author=repository_author)
+        # print("Committed changes...")
+        # origin = cloned_repository.remote(name='origin')
+        # origin.push(new_branch)
+        # print("Pushed to remote...")
 
-        files_to_remove=['.circleci/config.yml', 'integration_tests/requirements.txt', 'integration_tests/ci/sample.profiles.yml']
-        remove_files(repo, branch_name, files_to_remove=files_to_remove)
-        print("Removed files...")
+        # update_project(repo, branch_name, config)
+        # print("Updated project versions...")
 
-        files_to_add=['integration_tests/requirements.txt','integration_tests/ci/sample.profiles.yml','.buildkite/pipeline.yml', '.buildkite/scripts/run_models.sh', '.buildkite/hooks/pre-command']
-        add_files(repo, branch_name, files_to_add=files_to_add)
-        print("Added files...")
-        open_pull_request(repo, branch_name, default_branch)
+        # update_packages(repo, branch_name, config)
+        # print("Updated package versions...")
+
+        # files_to_remove=['.circleci/config.yml', 'integration_tests/requirements.txt', 'integration_tests/ci/sample.profiles.yml']
+        # remove_files(repo, branch_name, files_to_remove=files_to_remove)
+        # print("Removed files...")
+
+        # files_to_add=['integration_tests/requirements.txt','integration_tests/ci/sample.profiles.yml','.buildkite/pipeline.yml', '.buildkite/scripts/run_models.sh', '.buildkite/hooks/pre-command']
+        # add_files(repo, branch_name, files_to_add=files_to_add)
+        # print("Added files...")
+        # open_pull_request(repo, branch_name, default_branch)
 
 if __name__ == "__main__":
     main()
