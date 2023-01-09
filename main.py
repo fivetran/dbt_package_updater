@@ -93,26 +93,6 @@ def update_project(
     # Update the require-dbt-version
     project["require-dbt-version"] = config["require-dbt-version"]
 
-    # Update the version
-    current_version = project["version"]
-    bump_type = config["version-bump-type"]
-
-    current_version_split = current_version.split(".")
-
-    # Bump the version
-    if bump_type == "patch":
-        current_version_split[2] = str(int(current_version_split[2]) + 1)
-    elif bump_type == "minor":
-        current_version_split[1] = str(int(current_version_split[1]) + 1)
-        current_version_split[2] = "0"
-    elif bump_type == "major":
-        current_version_split[0] = str(int(current_version_split[0]) + 1)
-        current_version_split[1] = "0"
-        current_version_split[2] = "0"
-
-    new_version = ".".join(current_version_split)
-    project["version"] = new_version
-
     # Update the project file
     repo.update_file(
         path=project_content.path,
@@ -121,32 +101,6 @@ def update_project(
         sha=project_content.sha,
         branch=branch_name,
     )
-
-
-"""
-def update_requirements(
-    repo: github.Repository.Repository, branch_name: str, config: str
-) -> None:
-    try:
-        requirements_content = repo.get_contents("integration_tests/requirements.txt")
-        new_content = ""
-        for requirement in config["requirements"]:
-            new_content += f"{requirement['name']}=={requirement['version']}\n"
-        repo.update_file(
-            path=requirements_content.path,
-            message="Updating dbt version in requirements.txt",
-            content=new_content,
-            sha=requirements_content.sha,
-            branch=branch_name,
-        )
-    except github.GithubException:
-        repo.create_file(
-            path="integration_tests/requirements.txt",
-            message="Updating dbt version in requirements.txt",
-            content=new_content,
-            branch=branch_name,
-        )
-"""
 
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
@@ -159,32 +113,20 @@ def open_pull_request(
     - [ ] Run dbt-arc-functions create_or_update_standard_models.py if new marts were added
     """
 
-    pull = repo.create_pull(
-        title="[MagicBot] Bumping package version",
-        body=body,
-        head=branch_name,
-        base=default_branch,
+    pr = repo.create_pull(
+        try:
+            title="Updating dbt version",
+            body=body,
+            head=branch_name,
+            base=default_branch,
+        except: github.GithubException:
+            print("Pull request already exists.")
     )
-
-    print(pull.html_url)
-
-"""
-def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="dbt-package-manager")
-    parser.add_argument("--repo-type", required=True)
-    return parser
-"""
+    
+    print(pr.html_url)
 
 
 def main():
-    """
-    # Parse arguments
-    parser = create_parser()
-    try: # pragma: no cover
-        args = parser.parse_args()
-    except SystemExit:
-        print("the following arguments is required in console --repo-type")
-    """
     # Setup
     branch_name = set_branch_name()
     creds = load_credentials()
@@ -196,7 +138,6 @@ def main():
         repo, default_branch = setup_repo(client, repo_name, branch_name)
         update_packages(repo, branch_name, config)
         update_project(repo, branch_name, config)
-        #update_requirements(repo, branch_name, config)
         open_pull_request(repo, branch_name, default_branch)
 
 

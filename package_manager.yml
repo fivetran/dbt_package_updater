@@ -15,5 +15,3 @@ packages:
 requirements:
   - name: dbt
     version: 1.0.0
-
-version-bump-type: major # major, minor or patch
