@@ -2,8 +2,8 @@ import github
 import yaml
 import hashlib
 import time
-import argparse
 import ruamel.yaml
+import logging
 
 def set_branch_name() -> str:
     """Generates a unique branch name for the pull request."""
@@ -105,26 +105,24 @@ def update_project(
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
 ) -> None:
-    body = """
-    #### This pull request was created automatically 🎉
+    try:
+        body = """
+        #### This pull request was created automatically 🎉
 
-    Before merging this PR:
-    - [ ] Verify that the dbt project runs in development mode
-    - [ ] Run dbt-arc-functions create_or_update_standard_models.py if new marts were added
-    """
-
-    pr = repo.create_pull(
-        try:
-            title="Updating dbt version",
-            body=body,
-            head=branch_name,
-            base=default_branch,
-        except: github.GithubException:
-            print("Pull request already exists.")
-    )
+        Before merging this PR:
+        - [ ] Verify that the dbt project runs in development mode
+        - [ ] Run dbt-arc-functions create_or_update_standard_models.py if new marts were added
+        """
+        pr = repo.create_pull(
+                title="Updating dbt version",
+                body=body,
+                head=branch_name,
+                base=default_branch,
+        )
+        print(pr.html_url)
     
-    print(pr.html_url)
-
+    except github.GithubException:
+        print("Pull request already exists.")
 
 def main():
     # Setup
@@ -139,6 +137,9 @@ def main():
         update_packages(repo, branch_name, config)
         update_project(repo, branch_name, config)
         open_pull_request(repo, branch_name, default_branch)
+    
+    # log sucessful run
+    
 
 
 if __name__ == "__main__":
