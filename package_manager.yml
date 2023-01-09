@@ -10,7 +10,8 @@ repositories:
 require-dbt-version: [">=1.0.0"]
 
 packages:
-  bsd/dbt-arc-functions: ["4.5.0"]
+  dbt-labs/dbt_utils: 1.0.0
+  https://github.com/bsd/dbt-arc-functions.git: v4.5.0
 
 requirements:
   - name: dbt
