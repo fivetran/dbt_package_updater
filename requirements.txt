@@ -1,4 +1,5 @@
 PyGithub==1.53
-mypy==0.790
+mypy==0.910
 argparse==1.4.0
 ruamel.yaml
+typed-ast==1.5.4

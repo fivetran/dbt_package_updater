@@ -5,25 +5,28 @@ import time
 import argparse
 import ruamel.yaml
 
-
 def set_branch_name() -> str:
+    """Generates a unique branch name for the pull request."""
     hash = hashlib.sha1()
     hash.update(str(time.time()).encode("utf-8"))
     branch_name = "MagicBot_" + hash.hexdigest()[:10]
     return branch_name
-
+    
 
 def load_credentials() -> dict:
+    """Loads credentials from github settings."""                     
     with open("credentials.yml") as file:
         creds = yaml.load(file, Loader=yaml.FullLoader)
     return creds
 
 
 def get_github_client(access_token: str) -> github.Github:
+    """Returns a Github client."""
     return github.Github(access_token)
 
 
 def load_configurations() -> dict:
+    """Loads configurations from package_manager.yml."""
     with open("package_manager.yml") as file:
         config = ruamel.yaml.load(
             file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True
@@ -32,7 +35,8 @@ def load_configurations() -> dict:
 
 
 def setup_repo(client: github.Github, repo_name: str, branch_name: str):
-    repo = client.get_repo("Fivetran/" + repo_name)
+    """Creates a new branch on the repo and returns the repo object."""
+    repo = client.get_repo("bsd/" + repo_name)
     try:
         master_sha = repo.get_branch(branch="master").commit.sha
         default_branch = "master"
@@ -44,8 +48,8 @@ def setup_repo(client: github.Github, repo_name: str, branch_name: str):
 
 
 def update_packages(
-    repo: github.Repository.Repository, branch_name: str, config: dict
-) -> None:
+    repo: github.Repository.Repository, branch_name: str, config: dict) -> None:
+    """Updates the packages.yml file."""
     try:
         packages_content = repo.get_contents("packages.yml")
         packages = ruamel.yaml.load(
@@ -78,6 +82,7 @@ def update_packages(
 def update_project(
     repo: github.Repository.Repository, branch_name: str, config: str
 ) -> None:
+    """Updates the dbt_project.yml file."""
     project_content = repo.get_contents("dbt_project.yml")
     project = ruamel.yaml.load(
         project_content.decoded_content,
@@ -85,13 +90,16 @@ def update_project(
         preserve_quotes=True,
     )
 
+    # Update the require-dbt-version
     project["require-dbt-version"] = config["require-dbt-version"]
 
+    # Update the version
     current_version = project["version"]
     bump_type = config["version-bump-type"]
 
     current_version_split = current_version.split(".")
 
+    # Bump the version
     if bump_type == "patch":
         current_version_split[2] = str(int(current_version_split[2]) + 1)
     elif bump_type == "minor":
@@ -105,6 +113,7 @@ def update_project(
     new_version = ".".join(current_version_split)
     project["version"] = new_version
 
+    # Update the project file
     repo.update_file(
         path=project_content.path,
         message="Updating require-dbt-version",
@@ -114,6 +123,7 @@ def update_project(
     )
 
 
+"""
 def update_requirements(
     repo: github.Repository.Repository, branch_name: str, config: str
 ) -> None:
@@ -136,7 +146,7 @@ def update_requirements(
             content=new_content,
             branch=branch_name,
         )
-
+"""
 
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
@@ -145,8 +155,8 @@ def open_pull_request(
     #### This pull request was created automatically 🎉
 
     Before merging this PR:
-    - [ ] Verify that all the tests pass.
-    - [ ] Tag a release 
+    - [ ] Verify that the dbt project runs in development mode
+    - [ ] Run dbt-arc-functions create_or_update_standard_models.py if new marts were added
     """
 
     pull = repo.create_pull(
@@ -160,14 +170,19 @@ def open_pull_request(
 
 
 def create_parser() -> argparse.ArgumentParser:
+    """Creates the argument parser."""
     parser = argparse.ArgumentParser(prog="dbt-package-manager")
     parser.add_argument("--repo-type", required=True)
     return parser
 
 
 def main():
+    # Parse arguments
     parser = create_parser()
-    args = parser.parse_args()
+    try: # pragma: no cover
+        args = parser.parse_args()
+    except SystemExit:
+        print("the following arguments is required in console --repo-type")
 
     # Setup
     branch_name = set_branch_name()
@@ -180,7 +195,7 @@ def main():
         repo, default_branch = setup_repo(client, repo_name, branch_name)
         update_packages(repo, branch_name, config)
         update_project(repo, branch_name, config)
-        update_requirements(repo, branch_name, config)
+        #update_requirements(repo, branch_name, config)
         open_pull_request(repo, branch_name, default_branch)
 
 
