@@ -45,10 +45,10 @@ Generate a personal access token for github here, if you haven't already: <https
 You've now got everything setup and can run Hooper. To do so, you can run the following command:
 
 ```bash
-python main.py --repo-type source
+python main.py
 ```
 
-That command will update all the 'source' repositories with the following changes:
+That command will update all the repositories with the following changes:
 
 * Bump any packages in `packages.yml` to the version(s) set in `package_manager.yml`
 * Bump the `require-dbt-version` in `dbt_project.yml` to the version(s) set in `package_manager.yml`

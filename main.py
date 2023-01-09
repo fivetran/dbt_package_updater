@@ -168,22 +168,23 @@ def open_pull_request(
 
     print(pull.html_url)
 
-
+"""
 def create_parser() -> argparse.ArgumentParser:
-    """Creates the argument parser."""
     parser = argparse.ArgumentParser(prog="dbt-package-manager")
     parser.add_argument("--repo-type", required=True)
     return parser
+"""
 
 
 def main():
+    """
     # Parse arguments
     parser = create_parser()
     try: # pragma: no cover
         args = parser.parse_args()
     except SystemExit:
         print("the following arguments is required in console --repo-type")
-
+    """
     # Setup
     branch_name = set_branch_name()
     creds = load_credentials()
@@ -191,7 +192,7 @@ def main():
     client = get_github_client(creds["access_token"])
 
     # Iterate through repos
-    for repo_name in config["repositories"][args.repo_type]:
+    for repo_name in config["repositories"]:
         repo, default_branch = setup_repo(client, repo_name, branch_name)
         update_packages(repo, branch_name, config)
         update_project(repo, branch_name, config)

@@ -1,5 +1,4 @@
 repositories:
-  source:
     - arc-mercycorps-dbt
     - bsd-oxfam
     - bsd-habitat
