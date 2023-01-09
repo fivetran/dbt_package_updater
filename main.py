@@ -3,7 +3,6 @@ import yaml
 import hashlib
 import time
 import ruamel.yaml
-import logging
 
 def set_branch_name() -> str:
     """Generates a unique branch name for the pull request."""
@@ -76,31 +75,34 @@ def update_packages(
             branch=branch_name,
         )
     except github.GithubException:
-        print("'packages.yml' not found in repo.")
+        print("'packages.yml' not found in " + repo.full_name)
 
 
 def update_project(
     repo: github.Repository.Repository, branch_name: str, config: str
 ) -> None:
     """Updates the dbt_project.yml file."""
-    project_content = repo.get_contents("dbt_project.yml")
-    project = ruamel.yaml.load(
-        project_content.decoded_content,
-        Loader=ruamel.yaml.RoundTripLoader,
-        preserve_quotes=True,
-    )
+    try:
+        project_content = repo.get_contents("dbt_project.yml")
+        project = ruamel.yaml.load(
+            project_content.decoded_content,
+            Loader=ruamel.yaml.RoundTripLoader,
+            preserve_quotes=True,
+        )
 
-    # Update the require-dbt-version
-    project["require-dbt-version"] = config["require-dbt-version"]
+        # Update the require-dbt-version
+        project["require-dbt-version"] = config["require-dbt-version"]
 
-    # Update the project file
-    repo.update_file(
-        path=project_content.path,
-        message="Updating require-dbt-version",
-        content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper),
-        sha=project_content.sha,
-        branch=branch_name,
-    )
+        # Update the project file
+        repo.update_file(
+            path=project_content.path,
+            message="Updating require-dbt-version",
+            content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper),
+            sha=project_content.sha,
+            branch=branch_name,
+        )
+    except github.GithubException:
+        print("'dbt_project.yml' not found in " + repo.full_name)
 
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
@@ -119,10 +121,10 @@ def open_pull_request(
                 head=branch_name,
                 base=default_branch,
         )
-        print(pr.html_url)
+        print("Pull request created at " + pr.html_url)
     
     except github.GithubException:
-        print("Pull request already exists.")
+        print("Pull request already exists in " + repo.full_name + ".")
 
 def main():
     # Setup
@@ -138,9 +140,8 @@ def main():
         update_project(repo, branch_name, config)
         open_pull_request(repo, branch_name, default_branch)
     
-    # log sucessful run
-    
-
+    # print success message
+    print("Done!")
 
 if __name__ == "__main__":
     main()
