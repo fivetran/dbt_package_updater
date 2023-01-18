@@ -115,7 +115,7 @@ def get_repo_contributors(repo: github.Repository.Repository) -> list:
     """Returns a list of repo contributors."""
     contributors = []
     for contributor in repo.get_contributors():
-    contributors.append(contributor.login)
+        contributors.append(contributor.login)
     return contributors
 
 def open_pull_request(
