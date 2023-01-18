@@ -126,6 +126,7 @@ def open_pull_request(
         body = f"""
         #### This pull request was created automatically 🎉
         @{' @'.join(contributors)}
+        
         Before merging this PR:
         - [ ] Verify that the dbt project runs in development mode
         - [ ] Run dbt-arc-functions create_or_update_standard_models.py if new marts were added
