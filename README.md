@@ -25,7 +25,8 @@ pyenv virtualenv 3.8 hooper && pyenv local hooper
 Activate pyenv by running the following:
 
 ```bash
-pyenv hooper```
+pyenv hooper
+```
 
 ### 3. Install the necessary libraries
 
