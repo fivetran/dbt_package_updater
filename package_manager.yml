@@ -7,7 +7,7 @@ repositories:
     - arc-cpah-dbt
     - arc-ktn-dbt
 
-require-dbt-version: [">=1.0.0"]
+require-dbt-version: [">=1.3.0"]
 
 packages:
   dbt-labs/dbt_utils: 1.0.0
@@ -15,4 +15,4 @@ packages:
 
 requirements:
   - name: dbt
-    version: 1.0.0
+    version: 1.3.0
