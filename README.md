@@ -22,6 +22,12 @@ Create a Python virtual environment for Hooper. If you don't already have a pref
 pyenv virtualenv 3.8 hooper && pyenv local hooper
 ```
 
+Activate pyenv by running the following:
+
+```bash
+pyenv hooper
+```
+
 ### 3. Install the necessary libraries
 
 Once you've created and activated your virtual environment, run the following to install the necessary dependencies:
