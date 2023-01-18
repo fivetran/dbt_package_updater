@@ -4,7 +4,7 @@ import hashlib
 import time
 import ruamel.yaml
 
-#TODO have the PR body tag the repo owner and contributors?
+#TODO have the PR body tag the repo owner and contributors? - https://docs.github.com/en/rest/reference/repos#list-repository-contributors
 #TODO trigger this workflow after new dbt-arc-functions are released, and get latest revision from dbt-arc-functions repo
 #TODO add a check to see if the dbt version is already the latest version
 #TODO add a check to see if the package versions are already the latest version
@@ -110,13 +110,22 @@ def update_project(
     except github.GithubException:
         print("'dbt_project.yml' not found in " + repo.full_name)
 
+
+def get_repo_contributors(repo: github.Repository.Repository) -> list:
+    """Returns a list of repo contributors."""
+    contributors = []
+    for contributor in repo.get_contributors():
+    contributors.append(contributor.login)
+    return contributors
+
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
 ) -> None:
     try:
-        body = """
+        contributors = get_repo_contributors(repo)
+        body = f"""
         #### This pull request was created automatically 🎉
-
+        @{' @'.join(contributors)}
         Before merging this PR:
         - [ ] Verify that the dbt project runs in development mode
         - [ ] Run dbt-arc-functions create_or_update_standard_models.py if new marts were added
@@ -144,6 +153,7 @@ def main():
         repo, default_branch = setup_repo(client, repo_name, branch_name)
         update_packages(repo, branch_name, config)
         update_project(repo, branch_name, config)
+        get_repo_contributors(repo)
         open_pull_request(repo, branch_name, default_branch)
     
     # print success message
