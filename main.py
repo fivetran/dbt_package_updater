@@ -14,8 +14,7 @@ def set_branch_name() -> str:
     """Generates a unique branch name for the pull request."""
     hash = hashlib.sha1()
     hash.update(str(time.time()).encode("utf-8"))
-    branch_name = "MagicBot_" + hash.hexdigest()[:10]
-    return branch_name
+    return f"MagicBot_{hash.hexdigest()[:10]}"
     
 
 def load_credentials() -> dict:
@@ -41,14 +40,14 @@ def load_configurations() -> dict:
 
 def setup_repo(client: github.Github, repo_name: str, branch_name: str):
     """Creates a new branch on the repo and returns the repo object."""
-    repo = client.get_repo("bsd/" + repo_name)
+    repo = client.get_repo(f"bsd/{repo_name}")
     try:
         master_sha = repo.get_branch(branch="master").commit.sha
         default_branch = "master"
-    except:
+    except Exception:
         master_sha = repo.get_branch(branch="main").commit.sha
         default_branch = "main"
-    repo.create_git_ref(ref="refs/heads/" + branch_name, sha=master_sha)
+    repo.create_git_ref(ref=f"refs/heads/{branch_name}", sha=master_sha)
     return repo, default_branch
 
 
@@ -81,7 +80,7 @@ def update_packages(
             branch=branch_name,
         )
     except github.GithubException:
-        print("'packages.yml' not found in " + repo.full_name)
+        print(f"'packages.yml' not found in {repo.full_name}")
 
 
 def update_project(
@@ -108,15 +107,12 @@ def update_project(
             branch=branch_name,
         )
     except github.GithubException:
-        print("'dbt_project.yml' not found in " + repo.full_name)
+        print(f"'dbt_project.yml' not found in {repo.full_name}")
 
 
 def get_repo_contributors(repo: github.Repository.Repository) -> list:
     """Returns a list of repo contributors."""
-    contributors = []
-    for contributor in repo.get_contributors():
-        contributors.append(contributor.login)
-    return contributors
+    return [contributor.login for contributor in repo.get_contributors()]
 
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
@@ -137,10 +133,10 @@ def open_pull_request(
                 head=branch_name,
                 base=default_branch,
         )
-        print("Pull request created at " + pr.html_url)
-    
+        print(f"Pull request created at {pr.html_url}")
+
     except github.GithubException:
-        print("Pull request already exists in " + repo.full_name + ".")
+        print(f"Pull request already exists in {repo.full_name}.")
 
 def main():
     # Setup
