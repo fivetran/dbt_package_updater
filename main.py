@@ -7,6 +7,7 @@ import ruamel.yaml
 # TODO trigger this workflow after new dbt-arc-functions are released, and get latest revision from dbt-arc-functions repo
 # TODO add a check to see if the dbt version is already the latest version
 # TODO add a check to see if the package versions are already the latest version
+# TODO add a step that pulls latest dbt-arc-functions revision
 
 
 def set_branch_name() -> str:
