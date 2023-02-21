@@ -4,7 +4,6 @@ repositories:
     - bsd-habitat
     - arc-vera-dbt
     - arc-campaigns-fairfight-dbt
-    - arc-ktn-dbt
 
 require-dbt-version: [">=1.3.0"]
 
