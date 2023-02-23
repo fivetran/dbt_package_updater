@@ -1,0 +1,20 @@
+name: Run Python script on push to bsd/dbt-arc-functions repository
+
+on:
+  repository_dispatch:
+    repo:
+      name: bsd/dbt-arc-functions
+
+jobs:
+  run-python:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+    - name: Install requirements
+      run: pip install -r requirements.txt
+    - name: Run Python script
+      run: python main.py
