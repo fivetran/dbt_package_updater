@@ -1,13 +1,14 @@
 """This script updates the dbt version and package versions in all
     dbt projects in the bsd organization."""
 
-
+import requests
+from bs4 import BeautifulSoup
 import contextlib
 import time
 import hashlib
-import github
-import yaml
 import subprocess
+from github import Github, GithubException, Repository
+import yaml
 
 
 import ruamel.yaml
@@ -19,72 +20,67 @@ def set_branch_name() -> str:
     """Generates a unique branch name for the pull request."""
     hash_name = hashlib.sha1()
     hash_name.update(str(time.time()).encode("utf-8"))
-    return f"MagicBot_{hash_name.hexdigest()[:10]}" 
+    return f"MagicBot_{hash_name.hexdigest()[:10]}"  # 10 characters
 
 
-def load_credentials() -> dict:
-    """Loads credentials from github settings."""                   
-    with open("credentials.yml", encoding='utf-8') as file:
-        creds = yaml.load(file, Loader=yaml.FullLoader)
+def load_credentials(credentials_file: str) -> dict:
+    """Loads credentials from a file."""
+    with open(credentials_file, encoding='utf-8') as file:
+        creds = ruamel.yaml.load(file, Loader=ruamel.yaml.Loader)
     return creds
 
 
-def get_github_client(access_token: str) -> github.Github:
+def get_github_client(access_token: str) -> Github:
     """Returns a Github client."""
-    return github.Github(access_token)
+    return Github(access_token)
 
 
-def load_configurations() -> dict:
-    """Loads configurations from package_manager.yml."""
-    with open("package_manager.yml", encoding='utf-8') as file:
+def load_configurations(config_file: str) -> dict:
+    """Loads configurations from a file."""
+    with open(config_file, encoding='utf-8') as file:
         config = ruamel.yaml.load(
             file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True
         )
     return config
 
 
-def setup_repo(client: github.Github, repo_name: str, branch_name: str):
+def setup_repo(client: Github, repo_name: str, branch_name: str):
     """Creates a new branch on the repo and returns the repo object."""
     repo = client.get_repo(f"bsd/{repo_name}")
     try:
         master_sha = repo.get_branch(branch="master").commit.sha
         default_branch = "master"
-    except github.GithubException:
+    except GithubException:
         master_sha = repo.get_branch(branch="main").commit.sha
         default_branch = "main"
     repo.create_git_ref(ref=f"refs/heads/{branch_name}", sha=master_sha)
     return repo, default_branch
 
 
-def find_file_in_repo(repo: github.Repository.Repository, filename: str):
-    '''Finds a file in a repo.'''
-    with contextlib.suppress(github.GithubException):
-        # Look for the file in the root directory
+def find_file_in_repo(repo: Repository.Repository, filename: str):
+    """Finds a file in a repo."""
+    try:
         return repo.get_contents(filename)
-    # If the file is not in the root directory, search for it in all subdir
-    subdirs = [c.path for c in repo.get_contents("") if c.type == "dir"]
-    for subdir in subdirs:
-        with contextlib.suppress(github.GithubException):
-            return repo.get_contents(f"{subdir}/{filename}")
-    # If the file is not found anywhere, raise an exception
-    raise github.GithubException(status=404, data={"message": f"{filename} not in {repo.full_name}"})
+    except GithubException as github_exception:
+        if github_exception.status == 404:
+            raise ValueError(f"'{filename}' not found in {repo.full_name}") from github_exception
+        raise github_exception
 
 
 def get_latest_version(repo_name: str) -> str:
-    """Fetches the latest version from a given GitHub repository."""
-    # Fetch the tags from the repository
-    git_command = ["git", "ls-remote", "--tags", f"git://github.com/{repo_name}.git"]
-    output = subprocess.check_output(git_command).decode()
-
-    # Filter for tags that start with "v" and sort them in descending order
-    versions = sorted([t.split("refs/tags/v")[-1] for t in output.split("\n") if t.startswith("refs/tags/v")], reverse=True)
-
-    # Return the latest version
-    return f"v{versions[0]}"
+    '''Gets the latest version tag from a GitHub repository.'''
+    url = f'https://github.com/{repo_name}/releases/latest'
+    response = requests.get(url, timeout=5)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    version_tag = soup.select_one('div.f1.text-gray-600 > a.link-gray-dark > span')
+    if version_tag is not None:
+        return version_tag.text.strip()
+    else:
+        return 'Version information not found.'
 
 
 def update_packages(
-    repo: github.Repository.Repository, branch_name: str, config: dict
+    repo: Repository, branch_name: str, config: dict
 ) -> None:
     """Updates the packages.yml file."""
     try:
@@ -118,12 +114,12 @@ def update_packages(
             sha=packages_content.sha,
             branch=branch_name,
         )
-    except github.GithubException:
+    except GithubException:
         print(f"'packages.yml' not found in {repo.full_name}")
 
 
 def update_project(
-    repo: github.Repository.Repository, branch_name: str, config: str
+    repo: Repository, branch_name: str, config: str
 ) -> None:
     """Updates the dbt_project.yml file."""
     try:
@@ -146,17 +142,17 @@ def update_project(
             branch=branch_name,
         )
 
-    except github.GithubException as github_exception:
+    except GithubException as github_exception:
         print(github_exception.data["message"])
 
 
-def get_repo_contributors(repo: github.Repository.Repository) -> list:
+def get_repo_contributors(repo: Repository.Repository) -> list:
     """Returns a list of repo contributors."""
     return [contributor.login for contributor in repo.get_contributors()]
 
 
 def open_pull_request(
-    repo: github.Repository.Repository, branch_name: str, default_branch: str
+    repo: Repository.Repository, branch_name: str, default_branch: str
 ) -> None:
     '''Opens a pull request'''
     try:
@@ -180,7 +176,7 @@ def open_pull_request(
         )
         print(f"Pull request created at {pull_request.html_url}")
 
-    except github.GithubException:
+    except GithubException:
         print(f"Pull request already exists in {repo.full_name}.")
 
 
