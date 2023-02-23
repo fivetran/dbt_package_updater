@@ -1,25 +1,31 @@
+"""This script updates the dbt version and package versions in all dbt projects in the bsd organization."""
+
+import time
+import hashlib
 import github
 import yaml
-import hashlib
-import time
+
+
 import ruamel.yaml
 
-# TODO trigger this workflow after new dbt-arc-functions are released, and get latest revision from dbt-arc-functions repo
+# TODO trigger this workflow after new dbt-arc-functions are released, and get 
+# latest revision from dbt-arc-functions repo
 # TODO add a check to see if the dbt version is already the latest version
-# TODO add a check to see if the package versions are already the latest version
+# TODO add a check to see if the package versions are 
+# already the latest version
 # TODO add a step that pulls latest dbt-arc-functions revision
 
 
 def set_branch_name() -> str:
     """Generates a unique branch name for the pull request."""
-    hash = hashlib.sha1()
-    hash.update(str(time.time()).encode("utf-8"))
-    return f"MagicBot_{hash.hexdigest()[:10]}"
-    
+    hash_name = hashlib.sha1()
+    hash_name.update(str(time.time()).encode("utf-8"))
+    return f"MagicBot_{hash.hexdigest()[:10]}"   
+
 
 def load_credentials() -> dict:
     """Loads credentials from github settings."""                     
-    with open("credentials.yml") as file:
+    with open("credentials.yml", encoding='utc-8') as file:
         creds = yaml.load(file, Loader=yaml.FullLoader)
     return creds
 
@@ -31,7 +37,7 @@ def get_github_client(access_token: str) -> github.Github:
 
 def load_configurations() -> dict:
     """Loads configurations from package_manager.yml."""
-    with open("package_manager.yml") as file:
+    with open("package_manager.yml", encoding='utc-8') as file:
         config = ruamel.yaml.load(
             file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True
         )
@@ -51,8 +57,7 @@ def setup_repo(client: github.Github, repo_name: str, branch_name: str):
     return repo, default_branch
 
 
-def update_packages(
-    repo: github.Repository.Repository, branch_name: str, config: dict) -> None:
+def update_packages(repo: github.Repository.Repository, branch_name: str, config: dict) -> None:
     """Updates the packages.yml file."""
     try:
         packages_content = repo.get_contents("packages.yml")
@@ -114,9 +119,11 @@ def get_repo_contributors(repo: github.Repository.Repository) -> list:
     """Returns a list of repo contributors."""
     return [contributor.login for contributor in repo.get_contributors()]
 
+
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
 ) -> None:
+    '''Opens a pull request'''
     try:
         contributors = get_repo_contributors(repo)
         body = f"""
@@ -138,7 +145,9 @@ def open_pull_request(
     except github.GithubException:
         print(f"Pull request already exists in {repo.full_name}.")
 
+
 def main():
+    '''Main function'''
     # Setup
     branch_name = set_branch_name()
     creds = load_credentials()
@@ -155,6 +164,7 @@ def main():
     
     # print success message
     print("Done!")
+
 
 if __name__ == "__main__":
     main()
