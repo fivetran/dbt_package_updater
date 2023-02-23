@@ -1,17 +1,16 @@
 """This script updates the dbt version and package versions in all
     dbt projects in the bsd organization."""
 
+import time
 import contextlib
 import hashlib
 import requests
-from bs4 import BeautifulSoup
-import time
 from github import Github, GithubException, Repository
-
-
 import ruamel.yaml
 
 # TODO add a check to see if the dbt version is already the latest version
+# TODO make it so that the PR doesn't run at all if there are no changes 
+# to the packages.yml file and the dbt-arc-functions package is already the latest version
 
 
 def set_branch_name() -> str:
@@ -160,9 +159,8 @@ def open_pull_request(
     try:
         contributors = get_repo_contributors(repo)
         body = f"""
-    #### This pull request was created
-    #### automatically by bsd/dbt_project_updater 🎉
-    Tagging contributors as FYI @{' @'.join(contributors)}
+    #### This pull request was created automagically by dbt_package_updater 🎉
+    Tagging contributors as FYI @{' @'.join(contributors)} 
 
     Before merging this PR:
     - [ ] Verify that all the checks pass.
