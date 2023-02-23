@@ -93,15 +93,8 @@ def update_packages(
                     package["version"] = config["packages"][name]
             if "git" in package:
                 name = package["git"]
-                if name in config["git"]:
-                    # get latest revision from GitHub repository
-                    repo_url = name
-                    branch = config["git"][name]
-                    package_repo = github.Github().get_repo(repo_url)
-                    latest_commit = package_repo.get_branch(branch).commit
-                    latest_revision = latest_commit.sha
-                    # update packages.yml with latest revision
-                    package["revision"] = latest_revision
+                if name in config["packages"]:
+                    package["revision"] = config["packages"][name]
 
         repo.update_file(
             path=packages_content.path,
@@ -125,7 +118,7 @@ def update_project(
             Loader=ruamel.yaml.RoundTripLoader,
             preserve_quotes=True,
             )
- 
+
         # Update the require-dbt-version
         project["require-dbt-version"] = config["require-dbt-version"]
 
