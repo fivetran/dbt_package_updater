@@ -73,7 +73,7 @@ def find_file_in_repo(repo: Repository.Repository, filename: str):
 def get_latest_version(repo_name: str) -> str:
     '''Gets the latest version tag from a GitHub repository.'''
     url = f'https://api.github.com/repos/{repo_name}/tags'
-    response = requests.get(url, timeout=5)
+    response = requests.get(url, timeout=(5, 30))
     if response.status_code == 200:
         if tags := response.json():
             latest_tag = max(tags, key=lambda x: x['name'])
