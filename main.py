@@ -65,13 +65,13 @@ def find_file_in_repo(repo: github.Repository.Repository, filename: str):
     with contextlib.suppress(github.GithubException):
         # Look for the file in the root directory
         return repo.get_contents(filename)
-    # If the file is not in the root directory, search for it in all subdirectories
+    # If the file is not in the root directory, search for it in all subdir
     subdirs = [c.path for c in repo.get_contents("") if c.type == "dir"]
     for subdir in subdirs:
         with contextlib.suppress(github.GithubException):
             return repo.get_contents(f"{subdir}/{filename}")
     # If the file is not found anywhere, raise an exception
-    raise github.GithubException(status=404, data={"message": f"{filename} not found in {repo.full_name}"})
+    raise github.GithubException(status=404, data={"message": f"{filename} not in {repo.full_name}"})
 
 
 def update_packages(
@@ -119,7 +119,7 @@ def update_project(
             Loader=ruamel.yaml.RoundTripLoader,
             preserve_quotes=True,
             )
-   
+ 
         # Update the require-dbt-version
         project["require-dbt-version"] = config["require-dbt-version"]
 
@@ -148,20 +148,23 @@ def open_pull_request(
     try:
         contributors = get_repo_contributors(repo)
         body = f"""
-        #### This pull request was created automatically 🎉
-        @{' @'.join(contributors)}
-        
-        Before merging this PR:
-        - [ ] Verify that the dbt project runs in development mode
-        - [ ] Run dbt-arc-functions create_or_update_standard_models.py if new marts were added
-        """
-        pr = repo.create_pull(
+    #### This pull request was created
+    #### automatically by bsd/dbt_project_updater 🎉
+    Tagging contributors as FYI @{' @'.join(contributors)}
+ 
+    Before merging this PR:
+    - [ ] Verify that all the checks pass.
+    - [ ] If revision adds new standard models,
+            run `create_or_update_standard_models.py`
+            in bsd/dbt-arc-functions repo.
+    """
+        pull_request = repo.create_pull(
                 title="Updating dbt version",
                 body=body,
                 head=branch_name,
                 base=default_branch,
         )
-        print(f"Pull request created at {pr.html_url}")
+        print(f"Pull request created at {pull_request.html_url}")
 
     except github.GithubException:
         print(f"Pull request already exists in {repo.full_name}.")
@@ -182,7 +185,7 @@ def main():
         update_project(repo, branch_name, config)
         get_repo_contributors(repo)
         open_pull_request(repo, branch_name, default_branch)
-    
+   
     # print success message
     print("Done!")
 
