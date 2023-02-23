@@ -7,6 +7,7 @@ import time
 import hashlib
 import github
 import yaml
+import subprocess
 
 
 import ruamel.yaml
@@ -69,6 +70,19 @@ def find_file_in_repo(repo: github.Repository.Repository, filename: str):
     raise github.GithubException(status=404, data={"message": f"{filename} not in {repo.full_name}"})
 
 
+def get_latest_version(repo_name: str) -> str:
+    """Fetches the latest version from a given GitHub repository."""
+    # Fetch the tags from the repository
+    git_command = ["git", "ls-remote", "--tags", f"git://github.com/{repo_name}.git"]
+    output = subprocess.check_output(git_command).decode()
+
+    # Filter for tags that start with "v" and sort them in descending order
+    versions = sorted([t.split("refs/tags/v")[-1] for t in output.split("\n") if t.startswith("refs/tags/v")], reverse=True)
+
+    # Return the latest version
+    return f"v{versions[0]}"
+
+
 def update_packages(
     repo: github.Repository.Repository, branch_name: str, config: dict
 ) -> None:
@@ -91,15 +105,11 @@ def update_packages(
                 if name in config["packages"]:
                     package["revision"] = config["packages"][name]
             if "git" in package and package["git"] == "https://github.com/bsd/dbt-arc-functions.git":
-                # get latest revision from GitHub repository
+                # get latest tag revision from GitHub repository
                 repo_name = "bsd/dbt-arc-functions"
-                branch = "main"
-                g = github.Github()
-                package_repo = g.get_repo(repo_name)
-                latest_commit = package_repo.get_branch(branch).commit
-                latest_revision = latest_commit.sha
-                # update packages.yml with latest revision
-                package["revision"] = latest_revision
+                latest_version = get_latest_version(repo_name)
+                # update packages.yml with latest version tag
+                package["version"] = latest_version
 
         repo.update_file(
             path=packages_content.path,
