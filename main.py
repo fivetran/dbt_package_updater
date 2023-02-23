@@ -118,7 +118,7 @@ def update_project(
             Loader=ruamel.yaml.RoundTripLoader,
             preserve_quotes=True,
             )
- 
+
         # Update the require-dbt-version
         project["require-dbt-version"] = config["require-dbt-version"]
 
