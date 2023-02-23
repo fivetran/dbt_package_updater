@@ -15,6 +15,8 @@ import ruamel.yaml
 # TODO add a check to see if the package versions are
 # already the latest version
 # TODO add a step that pulls latest dbt-arc-functions revision
+# TODO add a step that runs dbt-arc-functions
+# create_or_update_standard_models.py if new marts were added
 
 
 def set_branch_name() -> str:
@@ -63,7 +65,21 @@ def update_packages(
             ) -> None:
     """Updates the packages.yml file."""
     try:
-        packages_content = repo.get_contents("packages.yml")
+        root_content = repo.get_contents("")
+        packages_content = None
+        for item in root_content:
+            if item.type == "file" and item.name == "packages.yml":
+                packages_content = item
+                break
+            elif item.type == "dir":
+                try:
+                    packages_content = repo.get_contents(f"{item.path}/packages.yml")
+                    break
+                except github.GithubException:
+                    continue
+            if packages_content is None:
+                raise github.GithubException(status=404, data={"message": "Not Found"})
+      
         packages = ruamel.yaml.load(
             packages_content.decoded_content,
             Loader=ruamel.yaml.RoundTripLoader,
@@ -96,7 +112,21 @@ def update_project(
 ) -> None:
     """Updates the dbt_project.yml file."""
     try:
-        project_content = repo.get_contents("dbt_project.yml")
+        root_content = repo.get_contents("")
+        project_content = None
+        for item in root_content:
+            if item.type == "file" and item.name == "dbt_project.yml":
+                project_content = item
+                break
+            elif item.type == "dir":
+                try:
+                    project_content = repo.get_contents(f"{item.path}/dbt_project.yml")
+                    break
+                except github.GithubException:
+                    continue
+            if project_content is None:
+                raise github.GithubException(status=404, data={"message": "Not Found"})
+       
         project = ruamel.yaml.load(
             project_content.decoded_content,
             Loader=ruamel.yaml.RoundTripLoader,
