@@ -1,4 +1,4 @@
-name: Run Python script on push to bsd/dbt-arc-functions repository
+name: run on dbt-arc-functions updates
 
 on:
   repository_dispatch:
