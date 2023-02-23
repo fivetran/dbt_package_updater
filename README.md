@@ -1,3 +1,5 @@
+[![python build and lint](https://github.com/bsd/dbt_package_updater/actions/workflows/python-app.yml/badge.svg)](https://github.com/bsd/dbt_package_updater/actions/workflows/python-app.yml)
+
 # Hooper
 
 ## What is Hooper?
