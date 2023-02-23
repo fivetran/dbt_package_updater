@@ -107,7 +107,6 @@ def update_packages(
         print(f"'packages.yml' not found in {repo.full_name}")
 
 
-
 def update_project(
     repo: github.Repository.Repository, branch_name: str, config: str
 ) -> None:
