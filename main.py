@@ -1,14 +1,11 @@
 """This script updates the dbt version and package versions in all
     dbt projects in the bsd organization."""
 
+import hashlib
 import requests
 from bs4 import BeautifulSoup
-import contextlib
 import time
-import hashlib
-import subprocess
 from github import Github, GithubException, Repository
-import yaml
 
 
 import ruamel.yaml
@@ -37,6 +34,7 @@ def get_github_client(access_token: str) -> Github:
 
 def load_configurations(config_file: str) -> dict:
     """Loads configurations from a file."""
+    config_file = "package_manager.yml"
     with open(config_file, encoding='utf-8') as file:
         config = ruamel.yaml.load(
             file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True
@@ -152,7 +150,7 @@ def get_repo_contributors(repo: Repository.Repository) -> list:
 
 
 def open_pull_request(
-    repo: Repository.Repository, branch_name: str, default_branch: str
+    repo: Repository.Repository, branch_name: str, default_branch: str, contributors: list
 ) -> None:
     '''Opens a pull request'''
     try:
@@ -161,7 +159,7 @@ def open_pull_request(
     #### This pull request was created
     #### automatically by bsd/dbt_project_updater 🎉
     Tagging contributors as FYI @{' @'.join(contributors)}
- 
+
     Before merging this PR:
     - [ ] Verify that all the checks pass.
     - [ ] If revision adds new standard models,
@@ -181,24 +179,26 @@ def open_pull_request(
 
 
 def main():
-    '''Main function'''
+    """Main function"""
     # Setup
     branch_name = set_branch_name()
-    creds = load_credentials()
-    config = load_configurations()
+    creds = load_credentials("credentials.yml")
+    config = load_configurations("package_manager.yml")
     client = get_github_client(creds["access_token"])
 
     # Iterate through repos
     for repo_name in config["repositories"]:
-        repo, default_branch = setup_repo(client, repo_name, branch_name)
-        update_packages(repo, branch_name, config)
-        update_project(repo, branch_name, config)
-        get_repo_contributors(repo)
-        open_pull_request(repo, branch_name, default_branch)
-   
+        try:
+            repo, default_branch = setup_repo(client, repo_name, branch_name)
+            update_packages(repo, branch_name, config)
+            update_project(repo, branch_name, config)
+            contributors = get_repo_contributors(repo)
+            open_pull_request(repo, branch_name, default_branch, contributors)
+        except GithubException as github_exception:
+            print(f"Error: {github_exception.data['message']}")
+
     # print success message
     print("Done!")
-
-
+  
 if __name__ == "__main__":
     main()
