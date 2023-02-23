@@ -51,7 +51,7 @@ def setup_repo(client: github.Github, repo_name: str, branch_name: str):
     try:
         master_sha = repo.get_branch(branch="master").commit.sha
         default_branch = "master"
-    except Exception:
+    except github.GithubException:
         master_sha = repo.get_branch(branch="main").commit.sha
         default_branch = "main"
     repo.create_git_ref(ref=f"refs/heads/{branch_name}", sha=master_sha)
