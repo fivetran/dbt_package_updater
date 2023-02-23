@@ -21,12 +21,12 @@ def set_branch_name() -> str:
     """Generates a unique branch name for the pull request."""
     hash_name = hashlib.sha1()
     hash_name.update(str(time.time()).encode("utf-8"))
-    return f"MagicBot_{hash.hexdigest()[:10]}"  # noqa: F821 
+    return f"MagicBot_{hash_name.hexdigest()[:10]}" 
 
 
 def load_credentials() -> dict:
     """Loads credentials from github settings."""                   
-    with open("credentials.yml", encoding='utc-8') as file:
+    with open("credentials.yml", encoding='utf-8') as file:
         creds = yaml.load(file, Loader=yaml.FullLoader)
     return creds
 
