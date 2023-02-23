@@ -7,9 +7,9 @@ repositories:
 
 require-dbt-version: [">=1.3.0"]
 
+#do not include dbt-arc-functions, this one is pulled in automagically
 packages:
   dbt-labs/dbt_utils: 1.0.0
-  https://github.com/bsd/dbt-arc-functions.git: v4.7.0
   brooklyn-data/dbt_artifacts: 2.2.2
 
 requirements:

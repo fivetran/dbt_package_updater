@@ -95,6 +95,16 @@ def update_packages(
                 name = package["git"]
                 if name in config["packages"]:
                     package["revision"] = config["packages"][name]
+            if "git" in package and package["git"] == "https://github.com/bsd/dbt-arc-functions.git":
+                # get latest revision from GitHub repository
+                repo_name = "bsd/dbt-arc-functions"
+                branch = "main"
+                g = github.Github()
+                package_repo = g.get_repo(repo_name)
+                latest_commit = package_repo.get_branch(branch).commit
+                latest_revision = latest_commit.sha
+                # update packages.yml with latest revision
+                package["revision"] = latest_revision
 
         repo.update_file(
             path=packages_content.path,
