@@ -38,7 +38,7 @@ def get_github_client(access_token: str) -> github.Github:
 
 def load_configurations() -> dict:
     """Loads configurations from package_manager.yml."""
-    with open("package_manager.yml", encoding='utc-8') as file:
+    with open("package_manager.yml", encoding='utf-8') as file:
         config = ruamel.yaml.load(
             file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True
         )
