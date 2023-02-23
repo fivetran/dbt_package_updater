@@ -1,6 +1,7 @@
 """This script updates the dbt version and package versions in all
     dbt projects in the bsd organization."""
 
+import contextlib
 import hashlib
 import requests
 from bs4 import BeautifulSoup
@@ -57,24 +58,27 @@ def setup_repo(client: Github, repo_name: str, branch_name: str):
 
 def find_file_in_repo(repo: Repository.Repository, filename: str):
     """Finds a file in a repo."""
-    try:
+    with contextlib.suppress(GithubException):
+        # Look for the file in the root directory
         return repo.get_contents(filename)
-    except GithubException as github_exception:
-        if github_exception.status == 404:
-            raise ValueError(f"'{filename}' not found in {repo.full_name}") from github_exception
-        raise github_exception
+    # If the file is not in the root directory, search for it in all subdir
+    subdirs = [c.path for c in repo.get_contents("") if c.type == "dir"]
+    for subdir in subdirs:
+        with contextlib.suppress(GithubException):
+            return repo.get_contents(f"{subdir}/{filename}")
+    # If the file is not found anywhere, raise an exception
+    raise GithubException(status=404, data={"message": f"{filename} not in {repo.full_name}"})
 
 
 def get_latest_version(repo_name: str) -> str:
     '''Gets the latest version tag from a GitHub repository.'''
-    url = f'https://github.com/{repo_name}/releases/latest'
+    url = f'https://api.github.com/repos/{repo_name}/tags'
     response = requests.get(url, timeout=5)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    version_tag = soup.select_one('div.f1.text-gray-600 > a.link-gray-dark > span')
-    if version_tag is not None:
-        return version_tag.text.strip()
-    else:
-        return 'Version information not found.'
+    if response.status_code == 200:
+        if tags := response.json():
+            latest_tag = max(tags, key=lambda x: x['name'])
+            return latest_tag['name']
+    return 'Version information not found.'
 
 
 def update_packages(
@@ -103,7 +107,7 @@ def update_packages(
                 repo_name = "bsd/dbt-arc-functions"
                 latest_version = get_latest_version(repo_name)
                 # update packages.yml with latest version tag
-                package["version"] = latest_version
+                package["revision"] = latest_version
 
         repo.update_file(
             path=packages_content.path,
