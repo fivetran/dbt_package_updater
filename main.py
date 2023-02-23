@@ -9,8 +9,7 @@ from github import Github, GithubException, Repository
 import ruamel.yaml
 
 # TODO add a check to see if the dbt version is already the latest version
-# TODO make it so that the PR doesn't run at all if there are no changes 
-# to the packages.yml file and the dbt-arc-functions package is already the latest version
+# TODO make it so that the PR doesn't run at all if there are no changes to the packages.yml file and the dbt-arc-functions package is already the latest version
 
 
 def set_branch_name() -> str:
