@@ -1,6 +1,8 @@
 """This script updates the dbt version and package versions in all
     dbt projects in the bsd organization."""
 
+
+import contextlib
 import time
 import hashlib
 import github
@@ -58,12 +60,26 @@ def setup_repo(client: github.Github, repo_name: str, branch_name: str):
     return repo, default_branch
 
 
+def find_file_in_repo(repo: github.Repository.Repository, filename: str):
+    '''Finds a file in a repo.'''
+    with contextlib.suppress(github.GithubException):
+        # Look for the file in the root directory
+        return repo.get_contents(filename)
+    # If the file is not in the root directory, search for it in all subdirectories
+    subdirs = [c.path for c in repo.get_contents("") if c.type == "dir"]
+    for subdir in subdirs:
+        with contextlib.suppress(github.GithubException):
+            return repo.get_contents(f"{subdir}/{filename}")
+    # If the file is not found anywhere, raise an exception
+    raise github.GithubException(status=404, data={"message": f"{filename} not found in {repo.full_name}"})
+
+
 def update_packages(
-        repo: github.Repository.Repository, branch_name: str, config: dict
-            ) -> None:
+    repo: github.Repository.Repository, branch_name: str, config: dict
+) -> None:
     """Updates the packages.yml file."""
     try:
-        packages_content = repo.get_contents("packages.yml")
+        packages_content = find_file_in_repo(repo, "packages.yml")
         packages = ruamel.yaml.load(
             packages_content.decoded_content,
             Loader=ruamel.yaml.RoundTripLoader,
@@ -91,18 +107,19 @@ def update_packages(
         print(f"'packages.yml' not found in {repo.full_name}")
 
 
+
 def update_project(
     repo: github.Repository.Repository, branch_name: str, config: str
 ) -> None:
     """Updates the dbt_project.yml file."""
     try:
-        project_content = repo.get_contents("dbt_project.yml")
+        project_content = find_file_in_repo(repo, "dbt_project.yml")
         project = ruamel.yaml.load(
             project_content.decoded_content,
             Loader=ruamel.yaml.RoundTripLoader,
             preserve_quotes=True,
-        )
-
+            )
+   
         # Update the require-dbt-version
         project["require-dbt-version"] = config["require-dbt-version"]
 
@@ -114,8 +131,9 @@ def update_project(
             sha=project_content.sha,
             branch=branch_name,
         )
-    except github.GithubException:
-        print(f"'dbt_project.yml' not found in {repo.full_name}")
+
+    except github.GithubException as github_exception:
+        print(github_exception.data["message"])
 
 
 def get_repo_contributors(repo: github.Repository.Repository) -> list:
