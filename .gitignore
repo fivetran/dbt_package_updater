@@ -2,3 +2,4 @@ credentials.yml
 venv
 .python-version
 .vscode
+.venv

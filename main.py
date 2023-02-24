@@ -1,61 +1,90 @@
-import github
-import yaml
-import hashlib
+"""This script updates the dbt version and package versions in all
+    dbt projects in the bsd organization."""
+
 import time
+import contextlib
+import hashlib
+import requests
+from github import Github, GithubException, Repository
 import ruamel.yaml
 
-# TODO trigger this workflow after new dbt-arc-functions are released, and get latest revision from dbt-arc-functions repo
 # TODO add a check to see if the dbt version is already the latest version
-# TODO add a check to see if the package versions are already the latest version
-# TODO add a step that pulls latest dbt-arc-functions revision
+# TODO make it so that the PR doesn't run at all if there are no changes to the packages.yml file and the dbt-arc-functions package is already the latest version
 
 
 def set_branch_name() -> str:
     """Generates a unique branch name for the pull request."""
-    hash = hashlib.sha1()
-    hash.update(str(time.time()).encode("utf-8"))
-    return f"MagicBot_{hash.hexdigest()[:10]}"
-    
+    hash_name = hashlib.sha1()
+    hash_name.update(str(time.time()).encode("utf-8"))
+    return f"MagicBot_{hash_name.hexdigest()[:10]}"  # 10 characters
 
-def load_credentials() -> dict:
-    """Loads credentials from github settings."""                     
-    with open("credentials.yml") as file:
-        creds = yaml.load(file, Loader=yaml.FullLoader)
+
+def load_credentials(credentials_file: str) -> dict:
+    """Loads credentials from a file."""
+    with open(credentials_file, encoding='utf-8') as file:
+        creds = ruamel.yaml.load(file, Loader=ruamel.yaml.Loader)
     return creds
 
 
-def get_github_client(access_token: str) -> github.Github:
+def get_github_client(access_token: str) -> Github:
     """Returns a Github client."""
-    return github.Github(access_token)
+    return Github(access_token)
 
 
-def load_configurations() -> dict:
-    """Loads configurations from package_manager.yml."""
-    with open("package_manager.yml") as file:
+def load_configurations(config_file: str) -> dict:
+    """Loads configurations from a file."""
+    config_file = "package_manager.yml"
+    with open(config_file, encoding='utf-8') as file:
         config = ruamel.yaml.load(
             file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True
         )
     return config
 
 
-def setup_repo(client: github.Github, repo_name: str, branch_name: str):
+def setup_repo(client: Github, repo_name: str, branch_name: str):
     """Creates a new branch on the repo and returns the repo object."""
     repo = client.get_repo(f"bsd/{repo_name}")
     try:
         master_sha = repo.get_branch(branch="master").commit.sha
         default_branch = "master"
-    except Exception:
+    except GithubException:
         master_sha = repo.get_branch(branch="main").commit.sha
         default_branch = "main"
     repo.create_git_ref(ref=f"refs/heads/{branch_name}", sha=master_sha)
     return repo, default_branch
 
 
+def find_file_in_repo(repo: Repository.Repository, filename: str):
+    """Finds a file in a repo."""
+    with contextlib.suppress(GithubException):
+        # Look for the file in the root directory
+        return repo.get_contents(filename)
+    # If the file is not in the root directory, search for it in all subdir
+    subdirs = [c.path for c in repo.get_contents("") if c.type == "dir"]
+    for subdir in subdirs:
+        with contextlib.suppress(GithubException):
+            return repo.get_contents(f"{subdir}/{filename}")
+    # If the file is not found anywhere, raise an exception
+    raise GithubException(status=404, data={"message": f"{filename} not in {repo.full_name}"})
+
+
+def get_latest_version(repo_name: str) -> str:
+    '''Gets the latest version tag from a GitHub repository.'''
+    url = f'https://api.github.com/repos/{repo_name}/tags'
+    response = requests.get(url, timeout=(5, 30))
+    if response.status_code == 200:
+        if tags := response.json():
+            latest_tag = max(tags, key=lambda x: x['name'])
+            return latest_tag['name']
+    return 'Version information not found.'
+
+
 def update_packages(
-    repo: github.Repository.Repository, branch_name: str, config: dict) -> None:
+    repo: Repository, branch_name: str, config: dict
+) -> None:
     """Updates the packages.yml file."""
     try:
-        packages_content = repo.get_contents("packages.yml")
+        packages_content = find_file_in_repo(repo, "packages.yml")
         packages = ruamel.yaml.load(
             packages_content.decoded_content,
             Loader=ruamel.yaml.RoundTripLoader,
@@ -71,6 +100,12 @@ def update_packages(
                 name = package["git"]
                 if name in config["packages"]:
                     package["revision"] = config["packages"][name]
+            if "git" in package and package["git"] == "https://github.com/bsd/dbt-arc-functions.git":
+                # get latest tag revision from GitHub repository
+                repo_name = "bsd/dbt-arc-functions"
+                latest_version = get_latest_version(repo_name)
+                # update packages.yml with latest version tag
+                package["revision"] = latest_version
 
         repo.update_file(
             path=packages_content.path,
@@ -79,21 +114,21 @@ def update_packages(
             sha=packages_content.sha,
             branch=branch_name,
         )
-    except github.GithubException:
+    except GithubException:
         print(f"'packages.yml' not found in {repo.full_name}")
 
 
 def update_project(
-    repo: github.Repository.Repository, branch_name: str, config: str
+    repo: Repository, branch_name: str, config: str
 ) -> None:
     """Updates the dbt_project.yml file."""
     try:
-        project_content = repo.get_contents("dbt_project.yml")
+        project_content = find_file_in_repo(repo, "dbt_project.yml")
         project = ruamel.yaml.load(
             project_content.decoded_content,
             Loader=ruamel.yaml.RoundTripLoader,
             preserve_quotes=True,
-        )
+            )
 
         # Update the require-dbt-version
         project["require-dbt-version"] = config["require-dbt-version"]
@@ -106,55 +141,65 @@ def update_project(
             sha=project_content.sha,
             branch=branch_name,
         )
-    except github.GithubException:
-        print(f"'dbt_project.yml' not found in {repo.full_name}")
+
+    except GithubException as github_exception:
+        print(github_exception.data["message"])
 
 
-def get_repo_contributors(repo: github.Repository.Repository) -> list:
+def get_repo_contributors(repo: Repository.Repository) -> list:
     """Returns a list of repo contributors."""
     return [contributor.login for contributor in repo.get_contributors()]
 
+
 def open_pull_request(
-    repo: github.Repository.Repository, branch_name: str, default_branch: str
+    repo: Repository.Repository, branch_name: str, default_branch: str, contributors: list
 ) -> None:
+    '''Opens a pull request'''
     try:
         contributors = get_repo_contributors(repo)
         body = f"""
-        #### This pull request was created automatically 🎉
-        @{' @'.join(contributors)}
-        
-        Before merging this PR:
-        - [ ] Verify that the dbt project runs in development mode
-        - [ ] Run dbt-arc-functions create_or_update_standard_models.py if new marts were added
-        """
-        pr = repo.create_pull(
+    #### This pull request was created automagically by dbt_package_updater 🎉
+    Tagging contributors as FYI @{' @'.join(contributors)} 
+
+    Before merging this PR:
+    - [ ] Verify that all the checks pass.
+    - [ ] If revision adds new standard models,
+            run `create_or_update_standard_models.py`
+            in bsd/dbt-arc-functions repo.
+    """
+        pull_request = repo.create_pull(
                 title="Updating dbt version",
                 body=body,
                 head=branch_name,
                 base=default_branch,
         )
-        print(f"Pull request created at {pr.html_url}")
+        print(f"Pull request created at {pull_request.html_url}")
 
-    except github.GithubException:
+    except GithubException:
         print(f"Pull request already exists in {repo.full_name}.")
 
+
 def main():
+    """Main function"""
     # Setup
     branch_name = set_branch_name()
-    creds = load_credentials()
-    config = load_configurations()
+    creds = load_credentials("credentials.yml")
+    config = load_configurations("package_manager.yml")
     client = get_github_client(creds["access_token"])
 
     # Iterate through repos
     for repo_name in config["repositories"]:
-        repo, default_branch = setup_repo(client, repo_name, branch_name)
-        update_packages(repo, branch_name, config)
-        update_project(repo, branch_name, config)
-        get_repo_contributors(repo)
-        open_pull_request(repo, branch_name, default_branch)
-    
+        try:
+            repo, default_branch = setup_repo(client, repo_name, branch_name)
+            update_packages(repo, branch_name, config)
+            update_project(repo, branch_name, config)
+            contributors = get_repo_contributors(repo)
+            open_pull_request(repo, branch_name, default_branch, contributors)
+        except GithubException as github_exception:
+            print(f"Error: {github_exception.data['message']}")
+
     # print success message
     print("Done!")
-
+  
 if __name__ == "__main__":
     main()
