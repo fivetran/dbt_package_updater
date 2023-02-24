@@ -10,6 +10,7 @@ from github import Github, GithubException, Repository
 import ruamel.yaml
 
 # TODO add a check to see if the dbt version is already the latest version
+# TODO have it automatically update projects to the latest version of dbt (but how to handle breaking changes? and how to handle dbt cloud run environment?)
 # TODO make it so that the PR doesn't run at all if there are no changes to the packages.yml file and the dbt-arc-functions package is already the latest version
 
 
@@ -194,6 +195,7 @@ def main():
 
     # print success message
     print("Done!")
+
   
 if __name__ == "__main__":
     main()
