@@ -2,6 +2,7 @@
     dbt projects in the bsd organization."""
 
 import time
+import os
 import contextlib
 import hashlib
 import requests
@@ -9,6 +10,7 @@ from github import Github, GithubException, Repository
 import ruamel.yaml
 
 # TODO add a check to see if the dbt version is already the latest version
+# TODO have it automatically update projects to the latest version of dbt (but how to handle breaking changes? and how to handle dbt cloud run environment?)
 # TODO make it so that the PR doesn't run at all if there are no changes to the packages.yml file and the dbt-arc-functions package is already the latest version
 
 
@@ -19,15 +21,9 @@ def set_branch_name() -> str:
     return f"MagicBot_{hash_name.hexdigest()[:10]}"  # 10 characters
 
 
-def load_credentials(credentials_file: str) -> dict:
-    """Loads credentials from a file."""
-    with open(credentials_file, encoding='utf-8') as file:
-        creds = ruamel.yaml.load(file, Loader=ruamel.yaml.Loader)
-    return creds
-
-
-def get_github_client(access_token: str) -> Github:
+def get_github_client() -> Github:
     """Returns a Github client."""
+    access_token = os.environ['GITHUB_TOKEN']
     return Github(access_token)
 
 
@@ -183,9 +179,8 @@ def main():
     """Main function"""
     # Setup
     branch_name = set_branch_name()
-    creds = load_credentials("credentials.yml")
     config = load_configurations("package_manager.yml")
-    client = get_github_client(creds["access_token"])
+    client = get_github_client()
 
     # Iterate through repos
     for repo_name in config["repositories"]:
@@ -200,6 +195,7 @@ def main():
 
     # print success message
     print("Done!")
+
   
 if __name__ == "__main__":
     main()
