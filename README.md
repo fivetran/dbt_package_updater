@@ -4,13 +4,13 @@
 
 ## What is Hooper?
 
-Hooper is a command line tool that enables dbt developers to automatically update package dependencies and required dbt versions in dbt packages. It is used every time a dbt or dbt-utils release occurs.
+Hooper is a command line tool that enables dbt developers to automatically update package dependencies and required dbt versions in dbt packages. It runs every time a push is made to the `main` branch of a dbt-arc-functions, it pulls in the latest version of the package, and opens a pull request with the updated dependencies.
 
 ## Installation and Usage Instructions
 
 ### 1. Clone this repository
 
-In order to use Hooper, you will need to clone this repository. You can do so using the method of your choosing.
+In order to use Hooper locally, you will need to clone this repository. You can do so using the method of your choosing.
 
 ### 2. Set up a local environment
 
@@ -46,7 +46,11 @@ In order to update dbt packages, the `package_manager.yml` file needs to be upda
 * The bounds for the `require-dbt-version` variable in the `dbt_project.yml` files of each package to be updated.
 * The version of each dependent package should be updated to in all the dbt packages, i.e. dbt-utils, fivetran-utils.
 
-Generate a personal access token for github here, if you haven't already: <https://github.com/settings/tokens/new> (make sure to select the `repo` scope). Then add the token to a credentials.yml file (you can copy the format in sample.credentials.yml).
+Generate a personal access token for github here, if you haven't already: <https://github.com/settings/tokens/new> (make sure to select the `repo` scope). Then add the token to your environment variables as `GITHUB_TOKEN`.
+
+```bash
+export GITHUB_TOKEN=<your_token>
+```
 
 ### 5. Run Hooper
 

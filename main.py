@@ -2,6 +2,7 @@
     dbt projects in the bsd organization."""
 
 import time
+import os
 import contextlib
 import hashlib
 import requests
@@ -19,15 +20,9 @@ def set_branch_name() -> str:
     return f"MagicBot_{hash_name.hexdigest()[:10]}"  # 10 characters
 
 
-def load_credentials(credentials_file: str) -> dict:
-    """Loads credentials from a file."""
-    with open(credentials_file, encoding='utf-8') as file:
-        creds = ruamel.yaml.load(file, Loader=ruamel.yaml.Loader)
-    return creds
-
-
-def get_github_client(access_token: str) -> Github:
+def get_github_client() -> Github:
     """Returns a Github client."""
+    access_token = os.environ['GITHUB_TOKEN']
     return Github(access_token)
 
 
@@ -183,9 +178,8 @@ def main():
     """Main function"""
     # Setup
     branch_name = set_branch_name()
-    creds = load_credentials("credentials.yml")
     config = load_configurations("package_manager.yml")
-    client = get_github_client(creds["access_token"])
+    client = get_github_client()
 
     # Iterate through repos
     for repo_name in config["repositories"]:

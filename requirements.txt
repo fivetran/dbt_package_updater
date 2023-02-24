@@ -4,4 +4,3 @@ argparse==1.4.0
 ruamel.yaml
 typed-ast==1.5.4
 pyyaml==5.4.1
-beautifulsoup4==4.9.3
