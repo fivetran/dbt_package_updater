@@ -13,6 +13,7 @@ import ruamel.yaml
 # TODO fix situation where on run end in yml is broken into two lines with slashes
 # TODO have it automatically update projects to the latest version of dbt (but how to handle breaking changes? and how to handle dbt cloud run environment?)
 # TODO make it so that the PR doesn't run at all if there are no changes to the packages.yml file and the dbt-arc-functions package is already the latest version
+# TODO prevent it from creating commits if there are no changes to the repository
 
 
 def set_branch_name() -> str:
@@ -33,7 +34,8 @@ def load_configurations(config_file: str) -> dict:
     config_file = "package_manager.yml"
     with open(config_file, encoding='utf-8') as file:
         config = ruamel.yaml.load(
-            file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True
+            file, Loader=ruamel.yaml.RoundTripLoader,
+            preserve_quotes=True
         )
     return config
 
@@ -105,9 +107,10 @@ def update_packages(
                 package["revision"] = latest_version
 
         repo.update_file(
+            # TODO if yml has {{}}, dont break into two lines bc it is jinja code
             path=packages_content.path,
             message="Updating package dependencies",
-            content=ruamel.yaml.dump(packages, Dumper=ruamel.yaml.RoundTripDumper),
+            content=ruamel.yaml.dump(packages, Dumper=ruamel.yaml.RoundTripDumper, width=5000),
             sha=packages_content.sha,
             branch=branch_name,
         )
