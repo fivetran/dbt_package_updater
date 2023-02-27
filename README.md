@@ -1,8 +1,10 @@
 [![python build and lint](https://github.com/bsd/dbt_package_updater/actions/workflows/python-app.yml/badge.svg)](https://github.com/bsd/dbt_package_updater/actions/workflows/python-app.yml)
 
-# Hooper
+# Hooper 
 
 ## What is Hooper?
+
+Hooper was written by fivetran in their fivetran/dbt_package_updater. Once forked, the language and functionality has been adjusted to conform to use cases at bsd.
 
 Hooper is a command line tool that enables dbt developers to automatically update package dependencies and required dbt versions in dbt packages. It runs every time a push is made to the `main` branch of a dbt-arc-functions, it pulls in the latest version of the package, and opens a pull request with the updated dependencies.
 
