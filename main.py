@@ -137,7 +137,7 @@ def update_project(
         repo.update_file(
             path=project_content.path,
             message="Updating require-dbt-version",
-            content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper),
+            content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper, width=5000),
             sha=project_content.sha,
             branch=branch_name,
         )
