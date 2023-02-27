@@ -106,7 +106,7 @@ def update_packages(
 
         repo.update_file(
             path=packages_content.path,
-            message="Updating package dependendcies",
+            message="Updating package dependencies",
             content=ruamel.yaml.dump(packages, Dumper=ruamel.yaml.RoundTripDumper),
             sha=packages_content.sha,
             branch=branch_name,
