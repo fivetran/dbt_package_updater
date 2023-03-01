@@ -34,7 +34,7 @@ In order to update dbt packages, the `package_manager.yml` file needs to be upda
 
 * All the repos to be updated. This is under the `repositories` key. 
 * The bounds for the `require-dbt-verion` variable in the `dbt_project.yml` files of each package to be updated. 
-* The version of dbt to be used in CircleCI to test the upgrades. This is under the `ci-dbt-version` key. 
+* The version of dbt to be used in Buildkite to test the upgrades. This is under the `ci-dbt-version` key. 
 * The version of each dependent package should be updated to in all the dbt packages, i.e. dbt-utils, fivetran-utils. 
 
 ### 5. Run Hooper
