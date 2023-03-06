@@ -17,11 +17,13 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 5. (For Fivetran Solutions team) If you are running into errors on installing the `requirements.txt` or other issues with your virtual environment, please try the venv file for this use case in our shared vault.
-6. Lastly, you should now be able to execute the script with the below:
-```
-python main.py
-```
+
+6. After setting up the below for prerequisites you can start running your script.
     - You will need to remove the `repositories` directory or just the subdirectory pertaining to the repo you are updating for if you are re-running updates for the same repo.
+    - Run your script with the below:
+    ```
+    python main.py
+    ```
 
 # Using the Package Updater for mass repo updates
 
