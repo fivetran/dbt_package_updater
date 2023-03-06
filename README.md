@@ -1,4 +1,7 @@
 # Package Updater
+
+The purpose of this package is to enable the Solutions Analytics team at Fivetran a method to programmatically roll out updates to all Fivetran dbt Packages created and maintained by our team.
+
 ## Installation and Usage Instructions
 
 ### Setting up your environment
