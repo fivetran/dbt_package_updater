@@ -3,3 +3,4 @@ credentials.yml
 venv
 env
 .git
+repositories/

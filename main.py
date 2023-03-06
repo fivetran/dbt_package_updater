@@ -42,11 +42,11 @@ def setup_repo(
 def clone_repo(gh_link: str, path_to_repository: str, ssh_key: str) -> None:
     try:
         default_branch = "master"
-        cloned_repository = git.Repo.clone_from(gh_link, path_to_repository, branch=branch,
+        cloned_repository = git.Repo.clone_from(gh_link, path_to_repository, branch=default_branch,
                                             env={"GIT_SSH_COMMAND": 'ssh -i ' + ssh_key})
     except:
         default_branch = "main"
-        cloned_repository = git.Repo.clone_from(gh_link, path_to_repository, branch=branch,
+        cloned_repository = git.Repo.clone_from(gh_link, path_to_repository, branch=default_branch,
                                 env={"GIT_SSH_COMMAND": 'ssh -i ' + ssh_key})
     return cloned_repository, default_branch
 
