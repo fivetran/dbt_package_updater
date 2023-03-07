@@ -1,2 +1,6 @@
 credentials.yml
+.DS_Store
 venv
+env
+.git
+repositories/
