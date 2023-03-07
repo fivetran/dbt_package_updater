@@ -1,6 +1,6 @@
 # Hooper 
 
-## What is Hooper?
+## What is Hooper? 
 
 Hooper is a command line tool that enables dbt developers to automatically update package dependencies and required dbt versions in dbt packages. At Fivetran, it is used every time a dbt or dbt-utils release occurs.
 
