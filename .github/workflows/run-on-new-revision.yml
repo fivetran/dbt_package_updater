@@ -11,6 +11,8 @@ on:
     branches: [main]
     # Only trigger for pull requests merging into the main branch of the dbt-arc-functions repository
     paths: 'bsd/dbt-arc-functions/**'
+  pull_request:
+    branches: [main]
 
 jobs:
   run-python:
