@@ -6,13 +6,11 @@ name: run on dbt-arc-functions updates
 #      name: bsd/dbt-arc-functions
 
 on:
-  pull_request_target:
-    types: [closed]
-    branches: [main]
-    # Only trigger for pull requests merging into the main branch of the dbt-arc-functions repository
-    paths: 'bsd/dbt-arc-functions/**'
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+    paths: 'bsd/dbt-arc-functions/**'
 
 jobs:
   run-python:
