@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Add this line to enable debug logging
+      DEBUG: true
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
