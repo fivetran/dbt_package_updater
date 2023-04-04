@@ -6,7 +6,7 @@ name: run on dbt-arc-functions updates
 #      name: bsd/dbt-arc-functions
 
 on:
-  pull_request:
+  push:
     branches: [main]
   push:
     branches: [main]
@@ -22,12 +22,16 @@ jobs:
         # Add this line to enable debug logging
       DEBUG: true
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
-        python-version: '3.8'
+        python-version: "3.8"
     - name: Install requirements
-      run: pip install -r requirements.txt
+      run: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
     - name: Run Python script
       run: python main.py
+
+        
