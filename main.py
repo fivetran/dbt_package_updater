@@ -118,21 +118,31 @@ def find_and_replace(file_paths: list, find_and_replace_list: list, path_to_repo
         else:
             print("Ignoring "+path_to_repository_file+". Not found")
 
-def add_to_file(file_paths: list, new_line: str, path_to_repository: str) -> None:
+def add_to_file(file_paths: list, new_line: str, path_to_repository: str, insert_at_top: bool) -> None:
     for file in file_paths:
         try:
             print("Adding %s to file: %s..." %(new_line, file))
             path_to_repository_file = os.path.join(path_to_repository, file)
-            with open(path_to_repository_file, 'a') as new_file:
-                new_file.write(new_line + '\n')
-            print (u'\u2713', "%s successfully added to file %s..."%(new_line, file))
+            
+            if insert_at_top:
+                with open(path_to_repository_file, 'r') as new_file:
+                    content = new_file.read()
+                with open(path_to_repository_file, 'w') as new_file:
+                    new_file.write(new_line + '\n')
+                    new_file.write(content)
+                    print (u'\u2713', "%s successfully added to the top of file %s..."%(new_line, file))
+            else: 
+                with open(path_to_repository_file, 'a') as new_file:
+                    new_file.write(new_line + '\n')
+                    print (u'\u2713', "%s successfully added to the bottom of file %s..."%(new_line, file))
+
         except Exception as e:
             print (u'\u2717', "Adding %s file %s. Error: %s..." %(new_line, file, e))
 
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
 ) -> None:
-    body = """This pull request was created automatically 🎉\nBefore merging this PR (refer to Detailed Update Sheet 10/2022 for more information):\n- [ ] Verify `dbt_project.yml` & `integration_tests/dbt_project.yml` versions are properly bumped\n- [ ] Spot check for dispatch updates, `dbt_utils.macro` -> `dbt.macro` \n- [ ] Verify that `.circleci` directory has been removed\n- [ ] Verify `integration_tests/requirements.txt` adapters have been updated to 1.2.0 and dbt-databricks is added\n- [ ] Verify `.buildkite` directory has been added with the following: `hooks/pre-command`, `scripts/run_models.sh`, `pipeline.yml`\n- [ ] Update `packages.yml`, will need to bump source package (FT utils should be bumped)\n- [ ] Update `.buildkite/scripts/run_models.sh` with vars as applicable, if N/A then remove relevant lines from script\n- [ ] Remove databricks block from `.buildkite/pipeline.yml` if package is incompatible\n- [ ] Update schema names in `integration_tests/ci/sample.profiles.yml`\n- [ ] Update "spark" strings where applicable\n- [ ] Update `CHANGELOG` [template](https://github.com/fivetran/dbt_package_updater/blob/update/dbt-utils-crossdb-migration/CHANGELOG.md) and remove surrogate keys if not applicable to package\n- [ ] Update `README` for dbt version badge, install package version range and dependencies for: Fivetran_utils, dbt-utils and source packages\n- [ ] Regenerate docs\n- [ ] Follow Instructions for adding Buildkite \n- [ ] Follow instructions for removing Circleci
+    body = """This pull request was created automatically 🎉\nBefore merging this PR (refer to Detailed Update Sheet 04/2023 for more information):\n- [ ] Update `packages.yml` for source packages (FT utils should point to official release after it's confirmed to work using the github branch)\n- [ ] Ensure `.buildkite/scripts/run_models.sh` tests all significant variables\n- [ ] Ensure `.buildkite/scripts/run_models.sh` has the new run-operation line\n- [ ] Update schema names in `integration_tests/ci/sample.profiles.yml`\n- [ ] Update "spark" strings where applicable\n- [ ] Update `CHANGELOG` [template](https://github.com/fivetran/dbt_package_updater/blob/update/dbt-utils-crossdb-migration/CHANGELOG.md)\n- [ ] Update `README` for dbt version badge, install package version range and dependencies for: Fivetran_utils, dbt-utils and source packages
     """
 
     pull = repo.create_pull(
@@ -268,8 +278,11 @@ def main():
 
         files_to_add=['integration_tests/requirements2.txt']
         # files_to_add_to=['.buildkite/run_models.sh']
-        files_to_add_to=['dbt_project.yml']
-        add_to_file(file_paths=files_to_add_to, new_line='dbt run-operation fivetran_utils.drop_schemas --target "$db"', path_to_repository=path_to_repository)
+        drop_schema_command='dbt run-operation fivetran_utils.drop_schemas --target "$db"'
+        changelog_entry='# ' + repo_name + ' v0.MINOR.UPDATE\n\n ## Under the Hood:\n\n- Incorporated the new `fivetran_utils.drop_schemas` macro into the end of each Buildkite integration test job.\n'
+        add_to_file(file_paths=['.buildkite/run_models.sh'], new_line=drop_schema_command, path_to_repository=path_to_repository, insert_at_top=False)
+        add_to_file(file_paths=['README.md'], new_line=changelog_entry, path_to_repository=path_to_repository, insert_at_top=True)
+
         # add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
 
         # find_and_replace(file_paths, config["find-and-replace-list"], path_to_repository, cloned_repository)
