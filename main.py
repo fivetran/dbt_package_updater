@@ -13,8 +13,8 @@ class Author:
     email: str
 
 def set_defaults() -> str:
-    branch_name = 'MagicBot/' + "fill-in-name-here"
-    commit_message = 'fill in commit msg'
+    branch_name = 'MagicBot/' + "integation-test-webhooks"
+    commit_message = 'testing'
     return branch_name, commit_message
 
 def load_credentials() -> dict:
@@ -117,6 +117,17 @@ def find_and_replace(file_paths: list, find_and_replace_list: list, path_to_repo
                 file.close()
         else:
             print("Ignoring "+path_to_repository_file+". Not found")
+
+def add_to_file(file_paths: list, new_line: str, path_to_repository: str) -> None:
+    for file in file_paths:
+        try:
+            print("Adding %s to file: %s..." %(new_line, file))
+            path_to_repository_file = os.path.join(path_to_repository, file)
+            with open(path_to_repository_file, 'a') as new_file:
+                new_file.write(new_line + '\n')
+            print (u'\u2713', "%s successfully added to file %s..."%(new_line, file))
+        except Exception as e:
+            print (u'\u2717', "Adding %s file %s. Error: %s..." %(new_line, file, e))
 
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
@@ -228,7 +239,7 @@ def main():
     ssh_key = creds["ssh_key"]
 
     ## Set to True if remote branch already exists; False if it does not yet exist
-    branch_exists = False
+    branch_exists = True
 
     ## Iterates over all repos that are currently included in `package_manager.yml`
     for repo_name in config["repositories"]:
@@ -253,13 +264,16 @@ def main():
             print ("Branch already exists, checking out branch: %s..."%(branch_name))
         
         files_to_remove=['integration_tests/requirements.txt']
-        remove_files(file_paths=files_to_remove, path_to_repository=path_to_repository)
+        # remove_files(file_paths=files_to_remove, path_to_repository=path_to_repository)
 
         files_to_add=['integration_tests/requirements2.txt']
-        add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
+        # files_to_add_to=['.buildkite/run_models.sh']
+        files_to_add_to=['dbt_project.yml']
+        add_to_file(file_paths=files_to_add_to, new_line='dbt run-operation fivetran_utils.drop_schemas --target "$db"', path_to_repository=path_to_repository)
+        # add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
 
-        find_and_replace(file_paths, config["find-and-replace-list"], path_to_repository, cloned_repository)
-        print (u'\u2713', "Finished replacing values in files")
+        # find_and_replace(file_paths, config["find-and-replace-list"], path_to_repository, cloned_repository)
+        # print (u'\u2713', "Finished replacing values in files")
 
 
         cloned_repository.git.add(all=True)    
@@ -269,25 +283,26 @@ def main():
     
         if not branch_exists:
             origin.push(new_branch)
+            open_pull_request(repo, branch_name, default_branch)
+            print ("PR created for: ", repo_name)
         else: 
             origin.push(branch_name)
         print("Pushed to remote...")
 
         ## The following two try statements will need to be updated once their functions are updated and made sure to successfully run across all instances
-        # try:
-        #     update_project(repo, branch_name, config)
-        #     print("Updated project versions...")
-        # except: 
-        #     print("Updating project versions FAILED...")
+        try:
+            update_project(repo, branch_name, config)
+            print("Updated project versions...")
+        except: 
+            print("Updating project versions FAILED...")
 
-        # try:
-        #     update_packages(repo, branch_name, config)
-        #     print("Updated package versions...")
-        # except:
-        #     print("Updating packages FAILED...")
+        try:
+            update_packages(repo, branch_name, config)
+            print("Updated package versions...")
+        except:
+            print("Updating packages FAILED...")
 
-        open_pull_request(repo, branch_name, default_branch)
-        print ("PR created for: ", repo_name)
+        
 
 if __name__ == "__main__":
     main()

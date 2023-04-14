@@ -1,7 +1,8 @@
 repositories:
+  - dbt_starter_project
   # - dbt_app_reporting 
   # - dbt_apple_search_ads 
-  - dbt_apple_search_ads_source 
+  # - dbt_apple_search_ads_source 
   # - dbt_apple_store 
   # - dbt_apple_store_source 
   # - dbt_asana 
@@ -92,38 +93,42 @@ fivetran-utils-version: [">=0.4.0", "<0.5.0"]
 
 version-bump-type: minor
 
-find-and-replace-list:
-  - any_value
-  - bool_or
-  - cast_bool_to_text
-  - concat
-  - date_trunc
-  - dateadd
-  - datediff
-  - escape_single_quotes
-  - except
-  - hash
-  - intersect
-  - last_day
-  - length
-  - listagg
-  - position
-  - replace
-  - right
-  - safe_cast
-  - split_part
-  - string_literal
-  - type_bigint
-  - type_float
-  - type_int
-  - type_numeric
-  - type_string
-  - type_boolean
-  - type_timestamp
-  - current_timestamp
-  - current_timestamp_in_utc
-  - array_append
-  - array_concat
-  - array_construct
-  - surrogate_key ## keeps the same dispatch
-  - spark ## for ymls and sqls
+# find-and-replace-list:
+#   - any_value
+#   - bool_or
+#   - cast_bool_to_text
+#   - concat
+#   - date_trunc
+#   - dateadd
+#   - datediff
+#   - escape_single_quotes
+#   - except
+#   - hash
+#   - intersect
+#   - last_day
+#   - length
+#   - listagg
+#   - position
+#   - replace
+#   - right
+#   - safe_cast
+#   - split_part
+#   - string_literal
+#   - type_bigint
+#   - type_float
+#   - type_int
+#   - type_numeric
+#   - type_string
+#   - type_boolean
+#   - type_timestamp
+#   - current_timestamp
+#   - current_timestamp_in_utc
+#   - array_append
+#   - array_concat
+#   - array_construct
+#   - surrogate_key ## keeps the same dispatch
+#   - spark ## for ymls and sqls
+
+# new-lines-to-add:
+#   - dbt run-operation fivetran_utils.drop_schemas --target "$db"
+#     file_path: .buildkite/run_models.sh
