@@ -13,7 +13,7 @@ class Author:
     email: str
 
 def set_defaults() -> str:
-    branch_name = 'MagicBot/' + "integation-test-webhooks"
+    branch_name = 'MagicBot/' + "integation-test-webhooks-5"
     commit_message = 'testing'
     return branch_name, commit_message
 
@@ -142,7 +142,7 @@ def add_to_file(file_paths: list, new_line: str, path_to_repository: str, insert
 def open_pull_request(
     repo: github.Repository.Repository, branch_name: str, default_branch: str
 ) -> None:
-    body = """This pull request was created automatically 🎉\nBefore merging this PR (refer to Detailed Update Sheet 04/2023 for more information):\n- [ ] Update `packages.yml` for source packages (FT utils should point to official release after it's confirmed to work using the github branch)\n- [ ] Ensure `.buildkite/scripts/run_models.sh` tests all significant variables\n- [ ] Ensure `.buildkite/scripts/run_models.sh` has the new run-operation line\n- [ ] Update schema names in `integration_tests/ci/sample.profiles.yml`\n- [ ] Update "spark" strings where applicable\n- [ ] Update `CHANGELOG` [template](https://github.com/fivetran/dbt_package_updater/blob/update/dbt-utils-crossdb-migration/CHANGELOG.md)\n- [ ] Update `README` for dbt version badge, install package version range and dependencies for: Fivetran_utils, dbt-utils and source packages
+    body = """This pull request was created automatically 🎉:\n- [ ] Ensure `.buildkite/scripts/run_models.sh` has the new run-operation line\n- [ ] Update the package version (currently `v0.UPDATE.UPDATE`) in the `CHANGELOG`\n- [ ] Update project versions in the `dbt_project.yml` and `integration_tests/dbt_project.yml` files\n- [ ] Update Step 2 of the `README` to align either with this [source package example](https://github.com/fivetran/dbt_shopify_source/tree/main#step-2-install-the-package-skip-if-also-using-the-shopify-transformation-package) or this [transform package example](https://github.com/fivetran/dbt_shopify#step-2-install-the-package)
     """
 
     pull = repo.create_pull(
@@ -248,8 +248,8 @@ def main():
     repository_author.email = creds["repository_author_email"] ## Assigns Author object an email
     ssh_key = creds["ssh_key"]
 
-    ## Set to True if remote branch already exists; False if it does not yet exist
-    branch_exists = True
+    ## Set to True if remote branch (or PR) already exists; False if it does not yet exist
+    branch_exists = False
 
     ## Iterates over all repos that are currently included in `package_manager.yml`
     for repo_name in config["repositories"]:
@@ -278,10 +278,10 @@ def main():
 
         files_to_add=['integration_tests/requirements2.txt']
         # files_to_add_to=['.buildkite/run_models.sh']
-        drop_schema_command='dbt run-operation fivetran_utils.drop_schemas --target "$db"'
-        changelog_entry='# ' + repo_name + ' v0.MINOR.UPDATE\n\n ## Under the Hood:\n\n- Incorporated the new `fivetran_utils.drop_schemas` macro into the end of each Buildkite integration test job.\n'
-        add_to_file(file_paths=['.buildkite/run_models.sh'], new_line=drop_schema_command, path_to_repository=path_to_repository, insert_at_top=False)
-        add_to_file(file_paths=['README.md'], new_line=changelog_entry, path_to_repository=path_to_repository, insert_at_top=True)
+        drop_schema_command='dbt run-operation fivetran_utils.drop_schemas_automation --target "$db"'
+        changelog_entry='# ' + repo_name + ' v0.UPDATE.UPDATE\n\n ## Under the Hood:\n\n- Incorporated the new `fivetran_utils.drop_schemas_automation` macro into the end of each Buildkite integration test job.\n'
+        add_to_file(file_paths=['.buildkite/scripts/run_models.sh'], new_line=drop_schema_command, path_to_repository=path_to_repository, insert_at_top=False)
+        add_to_file(file_paths=['CHANGELOG.md'], new_line=changelog_entry, path_to_repository=path_to_repository, insert_at_top=True)
 
         # add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
 
@@ -303,17 +303,17 @@ def main():
         print("Pushed to remote...")
 
         ## The following two try statements will need to be updated once their functions are updated and made sure to successfully run across all instances
-        try:
-            update_project(repo, branch_name, config)
-            print("Updated project versions...")
-        except: 
-            print("Updating project versions FAILED...")
+        # try:
+        #     update_project(repo, branch_name, config)
+        #     print("Updated project versions...")
+        # except: 
+        #     print("Updating project versions FAILED...")
 
-        try:
-            update_packages(repo, branch_name, config)
-            print("Updated package versions...")
-        except:
-            print("Updating packages FAILED...")
+        # try:
+        #     update_packages(repo, branch_name, config)
+        #     print("Updated package versions...")
+        # except:
+        #     print("Updating packages FAILED...")
 
         
 
