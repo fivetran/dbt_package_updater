@@ -13,7 +13,7 @@ class Author:
     email: str
 
 def set_defaults() -> str:
-    branch_name = 'MagicBot/' + "integation-test-webhooks-5"
+    branch_name = 'MagicBot/' + "integation-test-webhooks-11"
     commit_message = 'testing'
     return branch_name, commit_message
 
@@ -81,9 +81,13 @@ def add_files(file_paths: list, path_to_repository: str) -> None:
         try:
             print("Adding file: %s..." %(file))
             path_to_repository_file = os.path.join(path_to_repository, file)
-            file_to_add='docs/'+file
-            shutil.copy(file_to_add, path_to_repository_file)
-            print (u'\u2713', "%s successfully added..."%(file))
+            file_to_add='docs/' + file
+            if os.path.isdir(file_to_add):
+                shutil.copytree(file_to_add, path_to_repository_file)
+                print (u'\u2713', "%s directory successfully added..."%(file))
+            else:
+                shutil.copy(file_to_add, path_to_repository_file)
+                print (u'\u2713', "%s file successfully added..."%(file))
         except Exception as e:
             print (u'\u2717', "Adding file %s. Error: %s..." %(file, e))
 
@@ -273,16 +277,23 @@ def main():
             cloned_repository.git.checkout(branch_name)
             print ("Branch already exists, checking out branch: %s..."%(branch_name))
         
-        files_to_remove=['integration_tests/requirements.txt']
+        
         # remove_files(file_paths=files_to_remove, path_to_repository=path_to_repository)
 
-        files_to_add=['integration_tests/requirements2.txt']
+        
         # files_to_add_to=['.buildkite/run_models.sh']
         drop_schema_command='dbt run-operation fivetran_utils.drop_schemas_automation --target "$db"'
         changelog_entry='# ' + repo_name + ' v0.UPDATE.UPDATE\n\n ## Under the Hood:\n\n- Incorporated the new `fivetran_utils.drop_schemas_automation` macro into the end of each Buildkite integration test job.\n'
         add_to_file(file_paths=['.buildkite/scripts/run_models.sh'], new_line=drop_schema_command, path_to_repository=path_to_repository, insert_at_top=False)
         add_to_file(file_paths=['CHANGELOG.md'], new_line=changelog_entry, path_to_repository=path_to_repository, insert_at_top=True)
+        
+        files_to_remove=['.github/pull_request_template.md']
+        files_to_add=['.github/PULL_REQUEST_TEMPLATE/', '.github/pull_request_template.md']
 
+        # '.github/PULL_REQUEST_TEMPLATE/maintainer_pull_request_template.md'
+        
+        remove_files(file_paths=files_to_remove, path_to_repository=path_to_repository)
+        add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
         # add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
 
         # find_and_replace(file_paths, config["find-and-replace-list"], path_to_repository, cloned_repository)
