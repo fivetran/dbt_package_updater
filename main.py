@@ -13,7 +13,7 @@ class Author:
     email: str
 
 def set_defaults() -> str:
-    branch_name = 'MagicBot/' + "integation-test-webhooks-11"
+    branch_name = 'MagicBot/' + "integation-test-webhooks-14"
     commit_message = 'testing'
     return branch_name, commit_message
 
@@ -137,7 +137,7 @@ def add_to_file(file_paths: list, new_line: str, path_to_repository: str, insert
                     print (u'\u2713', "%s successfully added to the top of file %s..."%(new_line, file))
             else: 
                 with open(path_to_repository_file, 'a') as new_file:
-                    new_file.write(new_line + '\n')
+                    new_file.write('\n' + new_line + '\n')
                     print (u'\u2713', "%s successfully added to the bottom of file %s..."%(new_line, file))
 
         except Exception as e:
@@ -283,7 +283,7 @@ def main():
         
         # files_to_add_to=['.buildkite/run_models.sh']
         drop_schema_command='dbt run-operation fivetran_utils.drop_schemas_automation --target "$db"'
-        changelog_entry='# ' + repo_name + ' v0.UPDATE.UPDATE\n\n ## Under the Hood:\n\n- Incorporated the new `fivetran_utils.drop_schemas_automation` macro into the end of each Buildkite integration test job.\n'
+        changelog_entry='# ' + repo_name + ' v0.UPDATE.UPDATE\n\n ## Under the Hood:\n\n- Incorporated the new `fivetran_utils.drop_schemas_automation` macro into the end of each Buildkite integration test job.\n- Updated the pull request [templates](/.github).'
         add_to_file(file_paths=['.buildkite/scripts/run_models.sh'], new_line=drop_schema_command, path_to_repository=path_to_repository, insert_at_top=False)
         add_to_file(file_paths=['CHANGELOG.md'], new_line=changelog_entry, path_to_repository=path_to_repository, insert_at_top=True)
         

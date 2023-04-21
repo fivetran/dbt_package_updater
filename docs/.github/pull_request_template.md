@@ -1,22 +1,20 @@
-## PR Overview
+**Please provide your name and company**
 
-Please provide your name and company
-
-Link the issue/feature request which this PR is meant to address
+**Link the issue/feature request which this PR is meant to address**
 <!--- If an issue was not created, please create one first so we may discuss the PR prior to opening one. -->
 
-Detail what changes this PR introduces and how this addresses the issue/feature request linked above.
+**Detail what changes this PR introduces and how this addresses the issue/feature request linked above.**
 
-How did you validate the changes introduced within this PR?
+**How did you validate the changes introduced within this PR?**
 
-Which warehouse did you use to develop these changes?
+**Which warehouse did you use to develop these changes?**
 
-Did you update the CHANGELOG? 
+**Did you update the CHANGELOG?**
 <!--- Please update the new package version’s CHANGELOG entry detailing the changes included in this PR. -->
 <!--- To select a checkbox you simply need to add an "x" with no spaces between the brackets (eg. [x] Yes). -->
 - [ ] Yes
 
-Did you update the dbt_project.yml files with the version upgrade (please leverage standard semantic versioning)? (In both your main project and integration_tests)
+**Did you update the dbt_project.yml files with the version upgrade (please leverage standard semantic versioning)? (In both your main project and integration_tests)**
 <!--- The dbt_project.yml and the integration_tests/dbt_project.yml files contain the version number. Be sure to upgrade it accordingly -->
 <!--- To select a checkbox you simply need to add an "x" with no spaces between the brackets (eg. [x] Yes). -->
 - [ ] Yes
