@@ -1,4 +1,6 @@
 repositories:
+  - test
+  - test_2
   # - dbt_ad_reporting
   # - dbt_amplitude
   # - dbt_amplitude_source
@@ -57,7 +59,7 @@ repositories:
   # - dbt_pinterest_source
   # - dbt_quickbooks
   # - dbt_quickbooks_source 
-  - dbt_recharge
+  # - dbt_recharge
   # - dbt_recharge_source
   # - dbt_reddit
   # - dbt_reddit_ads

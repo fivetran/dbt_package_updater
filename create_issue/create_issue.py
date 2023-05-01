@@ -1,26 +1,21 @@
 import requests
 import json
-import yaml
-
-def load_yml(yml_name) -> dict:
-    with open(yml_name + '.yml') as file:
-        contents = yaml.load(file, Loader=yaml.FullLoader)
-    return contents
+import load_as_dict as loader
 
 # GitHub API endpoint to create an issue
 api_endpoint = 'https://api.github.com/repos/{}/{}/issues'
 
 # GitHub access token with the appropriate permissions
-creds = load_yml('../credentials')
+creds = loader.load_yml('../credentials')
 access_token = creds['access_token']
-owner = 'fivetran'
+owner = 'fivetran-catfritz'
 
 # List of repositories to target
-repos = load_yml('issue_repositories')
+repos = loader.load_yml('issue_repositories')
 repo_list = repos['repositories']
 
 # Issue details
-issue = load_yml('issue')
+issue = loader.load_yml('issue')
 issue_title = issue['title']
 issue_body = issue['body']
 issue_labels = issue['labels']
