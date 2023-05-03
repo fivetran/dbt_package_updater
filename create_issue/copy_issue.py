@@ -3,7 +3,7 @@ import json
 import load_as_dict
 
 # Load file with issue information
-issue_data = load_as_dict.load_yml('issue_repositories')
+issue_data = load_as_dict.load_yml('issue_repositories.yml')
 # Define source repo data
 source_repo = issue_data['source_repo_name']
 source_owner = issue_data['source_owner']
@@ -14,7 +14,7 @@ source_issue_url = f'https://github.com/{source_owner}/{source_repo}/issues/{iss
 issue_api_url = f'https://api.github.com/repos/{source_owner}/{source_repo}/issues/{issue_number}'
 
 # Authenticate with Github API using personal access token
-creds = load_as_dict.load_yml('../credentials')
+creds = load_as_dict.load_yml('../credentials.yml')
 access_token = creds['access_token']
 auth_header = {'Authorization': f'token {access_token}'}
 
@@ -23,8 +23,8 @@ response = requests.get(issue_api_url, headers=auth_header)
 response_data = json.loads(response.text)
 
 # Define destination repo(s) data
-destination_repos = issue_data['destination_repositories']
 destination_owner = issue_data['destination_owner']
+destination_repos = issue_data['destination_repositories']
 
 # Loop over destination repos and create new issues
 for dest_repo in destination_repos:
