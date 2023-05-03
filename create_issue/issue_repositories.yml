@@ -1,4 +1,9 @@
-repositories:
+source_owner: fivetran
+source_repo_name: dbt_amazon_ads_source
+source_issue_number: 6
+
+destination_owner: fivetran-catfritz
+destination_repositories:
   - test
   - test_2
   # - dbt_ad_reporting

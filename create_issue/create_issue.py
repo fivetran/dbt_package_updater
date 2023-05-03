@@ -42,5 +42,7 @@ for repo in repo_list:
     response = requests.post(url, headers=headers, data=json.dumps(data))
     
     # Check the response status code for errors
-    if response.status_code != 201:
+    if response.status_code == 201:
+        print(f'Issue created in {repo}')
+    else:
         print(f'Error creating issue in {repo}: {response.content}')
