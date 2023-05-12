@@ -1,10 +1,14 @@
-source_owner: fivetran
+# Enter information about the source issue
+source_owner: fivetran # Only change if your source is in a different organization
 source_repo_name: dbt_<repo name>
 source_issue_number: <issue number>
 
+# Enter information about where you're 
 destination_owner: fivetran
-destination_labels: ['type:enhancement', 'issue:copycat']
-destination_repositories:
+destination_labels: ['type:enhancement', 'issue:copycat'] # Labels can be added to/removed from this list if necessary.
+
+# Uncomment the repositories you want to copy the issue into. If one is missing, you can add it in.
+destination_repositories: 
   # - dbt_ad_reporting
   # - dbt_amplitude
   # - dbt_amplitude_source
