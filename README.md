@@ -5,27 +5,30 @@ The purpose of this package is to enable the Solutions Analytics team at Fivetra
 ## Installation and Usage Instructions
 
 ### Setting up your environment
-1. Clone this repo and checkout on this branch
+1. Clone this repo and checkout on `main`
 2. Set up a local virtual environment
     - Navigate to the location of this cloned repo
     - Create a virtual environment
 3. If you already have a preferred approach for creating a Python virtual environment, skip this step. Creating a virtual environment, you can do the below within your cloned repo:
-```
-pip install virtualenv
-virtualenv venv
-source venv/bin/activate
+```bash
+pip install virtualenv # once 
+virtualenv venv # once
+source venv/bin/activate # everytime
 ```
 4. Install necessary dependencies:
-``` 
+```bash
 pip install -r requirements.txt
 ```
+
+> If you get conflicting versions errors at this step, you may need to investigate PyPi and update (or rollback) version ranges to algin.
+
 5. (For Fivetran Solutions team) If you are running into errors on installing the `requirements.txt` or other issues with your virtual environment, please try the venv file for this use case in our shared vault.
 
 6. After setting up the below for prerequisites you can start running your script.
     - You will need to remove the `repositories` directory or just the subdirectory pertaining to the repo you are updating for if you are re-running updates for the same repo.
     - Run your script with the below:
-    ```
-    python main.py
+    ```bash
+    python3 main.py 
     ```
 
 # Using the Package Updater for mass repo updates
@@ -47,15 +50,17 @@ You can update the values in `set_defaults()` to your desired branch name and co
 You can navigate to `open_pull_request()` and update "body" with your checklist. The list needs to be a one-liner or else the formatting gets thrown off.
 
 ## Features
-### Removing Files
-To remove files, navigate to the main function and find the variable `        files_to_remove`. You can update this list with the files' file paths you would like to remove. The path starts from the root directory of the dbt project you are updating. For example, to remove your `integration_tests/requirements.txt` you would declare the `files_to_remove` variable like so:
+### Removing Files (source)
+To remove files, navigate to the `main` function and find the variable `files_to_remove`. You can update this list with the files' file paths you would like to remove. The path starts from the root directory of the dbt project you are updating. For example, to remove your `integration_tests/requirements.txt` you would declare the `files_to_remove` variable like so:
 
 ```python
 files_to_remove = ['integration_tests/requirements.txt']
 ```
 
 ### Adding Files
-To add files, navigate to the main function and find the variable `files_to_add`. You can update this list with the files' file paths you would like to add. The path starts from the root directory of the dbt project you are updating. You will need to add the files into the `dbt_package_updater/docs` folder under the same structure as the dbt project you are updating. For example, if you want to add a new `requirements2.txt` file into your integration test directory on your dbt project you would:
+To add files, navigate to the main function and find the variable `files_to_add`. You can update this list with the files' file paths you would like to add. The path starts from the root directory of the dbt project you are updating. You will need to add the files into the `dbt_package_updater/docs` folder under the same structure as the dbt project you are updating. 
+
+For example, if you want to add a new `requirements2.txt` file into your integration test directory on your dbt project you would:
 
 1. Create an `integration_tests` directory within the `docs` directory of this repo. 
 2. Add the file `requirements2.txt` into `integration_tests`
@@ -63,6 +68,8 @@ To add files, navigate to the main function and find the variable `files_to_add`
 ```python
 files_to_add = ['integration_tests/requirements2.txt']
 ```
+
+### Adding to Files
 
 ### Finding and Replacing Values (Minor WIP)
 Currently, this function has quite a bit of hard coded logic that will need to be made more flexible. The current function is from the latest migration mass update (dbt utils v1.0 migration + buildkite). 

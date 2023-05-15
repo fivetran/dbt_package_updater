@@ -1,45 +1,93 @@
 from multiprocessing import AuthenticationError
+# provides a way to create and manage multiple processes, and communicate between processes
+# Processes are separate instances of the Python interpreter, and they can run concurrently on the same machine. This can be useful for tasks that can be divided into smaller pieces that can be executed in parallel, or for tasks that require a lot of processing power.
+
+# The AuthenticationError exception is raised when a process tries to access a shared resource that it is not authorized to access.
+
 import github
+# allows you to interact with GitHub repositories and other GitHub resources. It is a wrapper around the GitHub REST API, which means that it allows you to perform all of the same actions that you can perform using the GitHub web interface.
+
 import yaml
+# allows you to read, write, and parse YAML files
+
 import ruamel.yaml
+# ruamel.yaml is a YAML 1.2 loader/dumper package for Python. It is a fork of the PyYAML library
+# powerful and flexible YAML parser that can be used for a variety of tasks. It is a good choice for applications that require a high degree of control over the YAML format.
+
 import os
+# The os module in Python provides a portable way of using operating system dependent functionality. It provides a number of functions for interacting with the file system, processes, and other operating system resources.
+
 import git
+#  The git module in Python provides a way to interact with git repositories. It is a wrapper around the git command line tools, and it provides a high-level API for performing common git operations,
+
 import json
+# The json module in Python provides a way to read, write, and parse JSON data.
+
 import pathlib
+# The pathlib module in Python provides a way to work with file paths in a more object-oriented way (requires python >= 3.4)
+
 import shutil
+# high-level interface to the operating system's file manipulation functions. It provides a number of functions for copying, moving, deleting, and renaming files and directories.
+
+from datetime import datetime
+# provides a number of classes and functions for representing and manipulating dates and times, as well as for formatting and parsing dates and times in a variety of formats.
 
 class Author:
+    '''
+    defining Author object
+    '''
     name: str
     email: str
 
 def set_defaults() -> str:
-    branch_name = 'MagicBot/' + "integation-test-webhooks-14"
-    commit_message = 'testing'
+    '''
+    set Branch name and commit messsage.
+    Note that the branch_exists var is set in main() - make sure that if it's set to false, there is not branch with this name in the repo 
+    '''
+    branch_name = 'MagicBot/' + "rollout-mass-updates" # update_pre_run
+    commit_message = 'Mass package update rollout ' + datetime.today().year + '-' + datetime.today.month
     return branch_name, commit_message
 
 def load_credentials() -> dict:
+    '''
+    load the credentials you created in the prerequisites for using this package:
+    - username
+    - ssh key
+    - access token 
+    - repository_author_name
+    - repository_author_email
+    '''
     with open("credentials.yml") as file:
         creds = yaml.load(file, Loader=yaml.FullLoader)
     return creds
 
 def get_github_client(access_token: str) -> github.Github:
+    '''
+    takes access token (from credentials yaml) and returns a Github Client
+    A Git client is an integrated development environment. 
+    '''
     return github.Github(access_token)
 
 def load_configurations() -> dict:
     """
-    Loads configurations from `package_manager.yml` file located in root repo
+    Loads all configurations from `package_manager.yml` file located in root repo
+    
     """
     with open("package_manager.yml") as file:
         config = ruamel.yaml.load(file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)        
     return config
 
-def setup_repo(
-    client: github.Github, repo_name: str, branch_name: str
-) -> github.Repository.Repository:
+def setup_repo(client: github.Github, repo_name: str, branch_name: str) -> github.Repository.Repository:
+    '''
+    returns the github repo so we can interact with it
+    '''
     repo = client.get_repo("Fivetran/" + repo_name)
     return repo
 
 def clone_repo(gh_link: str, path_to_repository: str, ssh_key: str) -> None:
+    ''' 
+    returns a cloned repo -> this will get put in the root/repositories/ folder
+    '''
     try:
         default_branch = "master"
         cloned_repository = git.Repo.clone_from(gh_link, path_to_repository, branch=default_branch,
@@ -51,15 +99,21 @@ def clone_repo(gh_link: str, path_to_repository: str, ssh_key: str) -> None:
     return cloned_repository, default_branch
 
 def get_file_paths(repo: github.Repository.Repository) -> list:
+    '''
+    takes GitHub repository object as input and returns a list of file paths in the repository that
+    meet the requirements in the last `if` statement of this function
+    '''
     file_path_list = []
-    repo_contents = repo.get_contents("")
+    repo_contents = repo.get_contents("") # "" as the `path` loads the contents of the root directory
     while len(repo_contents) > 1:
-        file_in_dir = repo_contents.pop(0)
+        file_in_dir = repo_contents.pop(0) # removes the file at the top of the list and returns the removed item
         if file_in_dir.type=='dir':
+            # recursively flatten folders and add contents to repo_contents
             repo_contents.extend(repo.get_contents(file_in_dir.path))
-        else :
+        else: 
+            # don't include _tmp models, packages.yml, or buildkite creds
+            # DO include only sql and yml files - update_pre_run
             if not file_in_dir.name.endswith('tmp.sql') and \
-                not file_in_dir.name.endswith('config.yml') and \
                 not file_in_dir.name.endswith('sample.profiles.yml') and \
                 not file_in_dir.name.endswith('packages.yml') and \
                 (file_in_dir.name.endswith('.sql') or file_in_dir.name.endswith('.yml')):
@@ -67,23 +121,32 @@ def get_file_paths(repo: github.Repository.Repository) -> list:
     return (file_path_list)
 
 def remove_files(file_paths: list, path_to_repository: str) -> None:
+    '''
+    given a list of file paths and a git repo, remove the files from the repo.
+    doesn't return anything
+    '''
     for file in file_paths: 
         try:
             print ("Removing file: %s..." %(file))
-            path_to_repository_file = os.path.join(path_to_repository, file)
+            path_to_repository_file = os.path.join(path_to_repository, file) # returns path_to_repository/file_path/../file.sql
             os.remove(path_to_repository_file)
             print (u'\u2713',"File: %s successfully removed..."%(file))
         except Exception as e:
             print (u'\u2717', "Removing file %s FAILED. Error: %s..." %(file, e))
 
 def add_files(file_paths: list, path_to_repository: str) -> None:
+    '''
+    given a list of file paths and a git repo, add the files to from the repo. 
+    The file paths should map onto file paths inside of the `docs/` folder of this package.
+    doesn't return anything
+    '''
     for file in file_paths:
         try:
             print("Adding file: %s..." %(file))
-            path_to_repository_file = os.path.join(path_to_repository, file)
-            file_to_add='docs/' + file
+            path_to_repository_file = os.path.join(path_to_repository, file) # returns path_to_repository/file_path/../file.sql
+            file_to_add='docs/' + file # the files to add should be stored in the docs folder
             if os.path.isdir(file_to_add):
-                shutil.copytree(file_to_add, path_to_repository_file)
+                shutil.copytree(file_to_add, path_to_repository_file) # FYI copytee also has an optional `ignore` list argument if so needed
                 print (u'\u2713', "%s directory successfully added..."%(file))
             else:
                 shutil.copy(file_to_add, path_to_repository_file)
@@ -91,66 +154,65 @@ def add_files(file_paths: list, path_to_repository: str) -> None:
         except Exception as e:
             print (u'\u2717', "Adding file %s. Error: %s..." %(file, e))
 
-def find_and_replace(file_paths: list, find_and_replace_list: list, path_to_repository: str, cloned_repository) -> None:
+def find_and_replace(file_paths: list, find_and_replace_list: list, path_to_repository: str) -> None:
+    '''
+    find and replace text in given file paths.
+
+    Future idea: turn `find_and_replace_list` into `find_and_replace_dict`
+    '''
     num_files_to_update=len(file_paths)
     num_current_file=0
     for checked_file in file_paths:
         num_current_file+=1
-        print ("Files find and replaced: " , num_current_file , "/", num_files_to_update)
+        print ("Files find-and-replaced: " , num_current_file , "/", num_files_to_update)
         path_to_repository_file = os.path.join(path_to_repository, checked_file)
         repo_file = pathlib.Path(path_to_repository_file)
         if repo_file.exists():
             for texts in find_and_replace_list:
+                # this code is for changing the alias of stuff
                 text_to_find = "dbt_utils." + texts
                 text_to_replace = "dbt." + texts
                 if text_to_find == "dbt_utils.surrogate_key":
                     text_to_replace = "dbt_utils.generate_surrogate_key"
-                if text_to_find == "dbt_utils.current_timestamp" or text_to_find == "dbt_utils.current_timestamp_in_utc":
-                    ## This is because current_timestamp exists as a subtext of current_timestamp_in_utc so we'll have incorrect find and replacing
-                    text_to_find = text_to_find+"("
-                    text_to_replace = text_to_replace+"_backcompat"+"("
-                if texts == "spark":
-                    text_to_find = "spark"
-                    text_to_replace = "!!!!!!! REPLACE 'spark' WITH 'spark','databricks' OR EQUIV !!!!!!!"
-                file = open(path_to_repository_file, 'r')
-                current_file_data = file.read()
-                file.close()
-                new_file_data = current_file_data.replace(text_to_find, text_to_replace)
-                file = open(path_to_repository_file, 'w')
-                file.write(new_file_data)
-                file.close()
+                file = open(path_to_repository_file, 'r') # open the file for reading
+                current_file_data = file.read() # load in the file content
+                file.close() # close the file
+                new_file_data = current_file_data.replace(text_to_find, text_to_replace) # replace strings
+                file = open(path_to_repository_file, 'w') # reopen the file for writing
+                file.write(new_file_data) # overwrite the file
+                file.close() # close the file
         else:
             print("Ignoring "+path_to_repository_file+". Not found")
 
 def add_to_file(file_paths: list, new_line: str, path_to_repository: str, insert_at_top: bool) -> None:
+    '''
+    takes file paths and adds a new line either at the top or end of each file. 
+    '''
     for file in file_paths:
         try:
             print("Adding %s to file: %s..." %(new_line, file))
             path_to_repository_file = os.path.join(path_to_repository, file)
             
             if insert_at_top:
-                with open(path_to_repository_file, 'r') as new_file:
-                    content = new_file.read()
-                with open(path_to_repository_file, 'w') as new_file:
-                    new_file.write(new_line + '\n')
-                    new_file.write(content)
+                with open(path_to_repository_file, 'r') as new_file: # read in the file
+                    content = new_file.read() # load in file
+                with open(path_to_repository_file, 'w') as new_file: # read in the file but we'll write to it
+                    new_file.write(new_line + '\n') # start the file with the new line(s)
+                    new_file.write(content) # write the rest of the file
                     print (u'\u2713', "%s successfully added to the top of file %s..."%(new_line, file))
             else: 
-                with open(path_to_repository_file, 'a') as new_file:
-                    new_file.write('\n' + new_line + '\n')
+                with open(path_to_repository_file, 'a') as new_file: # open file for appending
+                    new_file.write('\n' + new_line + '\n') # write to end of file
                     print (u'\u2713', "%s successfully added to the bottom of file %s..."%(new_line, file))
 
         except Exception as e:
             print (u'\u2717', "Adding %s file %s. Error: %s..." %(new_line, file, e))
 
-def open_pull_request(
-    repo: github.Repository.Repository, branch_name: str, default_branch: str
-) -> None:
-    body = """This pull request was created automatically 🎉:\n- [ ] Ensure `.buildkite/scripts/run_models.sh` has the new run-operation line\n- [ ] Update the package version (currently `v0.UPDATE.UPDATE`) in the `CHANGELOG`\n- [ ] Update project versions in the `dbt_project.yml` and `integration_tests/dbt_project.yml` files\n- [ ] Update Step 2 of the `README` to align either with this [source package example](https://github.com/fivetran/dbt_shopify_source/tree/main#step-2-install-the-package-skip-if-also-using-the-shopify-transformation-package) or this [transform package example](https://github.com/fivetran/dbt_shopify#step-2-install-the-package)
-    """
+def open_pull_request(repo: github.Repository.Repository, branch_name: str, default_branch: str) -> None:
+    body = """This pull request was created automatically 🎉:\n- [ ] Ensure `.buildkite/scripts/run_models.sh` has the new run-operation line\n- [ ] Update the package version (currently `v0.UPDATE.UPDATE`) in the `CHANGELOG`\n- [ ] Update project versions in the `dbt_project.yml` and `integration_tests/dbt_project.yml` files\n- [ ] Update Step 2 of the `README` to align either with this [source package example](https://github.com/fivetran/dbt_shopify_source/tree/main#step-2-install-the-package-skip-if-also-using-the-shopify-transformation-package) or this [transform package example](https://github.com/fivetran/dbt_shopify#step-2-install-the-package)"""
 
     pull = repo.create_pull(
-        title="Package Updater Testing PR",
+        title="Package Updater PR",
         body=body,
         head=branch_name,
         base=default_branch,
@@ -158,9 +220,7 @@ def open_pull_request(
 
     print(pull.html_url)
 
-def update_project(
-    repo: github.Repository.Repository, branch_name: str, config: str
-) -> None:
+def update_project(repo: github.Repository.Repository, branch_name: str, config: str) -> None:
     '''
     SCRIPT NEEDS TO BE UDPATED
     '''
@@ -205,9 +265,7 @@ def update_project(
             print("dbt project.yml files not found.")
             # print("error: ", error)
 
-def update_packages(
-    repo: github.Repository.Repository, branch_name: str, config: dict
-) -> None:
+def update_packages(repo: github.Repository.Repository, branch_name: str, config: dict) -> None:
     '''
     SCRIPT NEEDS TO BE UDPATED
     '''
@@ -282,18 +340,18 @@ def main():
 
         
         # files_to_add_to=['.buildkite/run_models.sh']
-        drop_schema_command='dbt run-operation fivetran_utils.drop_schemas_automation --target "$db"'
-        changelog_entry='# ' + repo_name + ' v0.UPDATE.UPDATE\n\n ## Under the Hood:\n\n- Incorporated the new `fivetran_utils.drop_schemas_automation` macro into the end of each Buildkite integration test job.\n- Updated the pull request [templates](/.github).'
-        add_to_file(file_paths=['.buildkite/scripts/run_models.sh'], new_line=drop_schema_command, path_to_repository=path_to_repository, insert_at_top=False)
-        add_to_file(file_paths=['CHANGELOG.md'], new_line=changelog_entry, path_to_repository=path_to_repository, insert_at_top=True)
+        # drop_schema_command='dbt run-operation fivetran_utils.drop_schemas_automation --target "$db"'
+        # changelog_entry='# ' + repo_name + ' v0.UPDATE.UPDATE\n\n ## Under the Hood:\n\n- Incorporated the new `fivetran_utils.drop_schemas_automation` macro into the end of each Buildkite integration test job.\n- Updated the pull request [templates](/.github).'
+        # add_to_file(file_paths=['.buildkite/scripts/run_models.sh'], new_line=drop_schema_command, path_to_repository=path_to_repository, insert_at_top=False)
+        # add_to_file(file_paths=['CHANGELOG.md'], new_line=changelog_entry, path_to_repository=path_to_repository, insert_at_top=True)
         
-        files_to_remove=['.github/pull_request_template.md']
-        files_to_add=['.github/PULL_REQUEST_TEMPLATE/', '.github/pull_request_template.md']
+        # files_to_remove=['.github/pull_request_template.md']
+        # files_to_add=['.github/PULL_REQUEST_TEMPLATE/', '.github/pull_request_template.md']
 
         # '.github/PULL_REQUEST_TEMPLATE/maintainer_pull_request_template.md'
         
-        remove_files(file_paths=files_to_remove, path_to_repository=path_to_repository)
-        add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
+        # remove_files(file_paths=files_to_remove, path_to_repository=path_to_repository)
+        # add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
         # add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
 
         # find_and_replace(file_paths, config["find-and-replace-list"], path_to_repository, cloned_repository)
