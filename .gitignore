@@ -4,3 +4,4 @@ venv
 env
 .git
 repositories/
+dbt_packages/

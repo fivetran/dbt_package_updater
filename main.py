@@ -13,8 +13,8 @@ class Author:
     email: str
 
 def set_defaults() -> str:
-    branch_name = 'MagicBot/' + "fill-in-name-here"
-    commit_message = 'fill in commit msg'
+    branch_name = 'MagicBot/' + "databricks-compatibility"
+    commit_message = 'sample.profiles.yml'
     return branch_name, commit_message
 
 def load_credentials() -> dict:
