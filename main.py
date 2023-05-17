@@ -43,6 +43,8 @@ def set_defaults() -> str:
     '''
     set Branch name and commit messsage.
     Note that the branch_exists var is set in main() - make sure that if it's set to false, there is not branch with this name in the repo 
+    
+    Future: should this also set the default PR title? Should the default PR title = commit message?
     '''
     branch_name = 'MagicBot/' + "rollout-mass-updates" # update_pre_run
     commit_message = 'Mass package update rollout ' + datetime.today().year + '-' + datetime.today.month
@@ -63,8 +65,11 @@ def load_credentials() -> dict:
 
 def get_github_client(access_token: str) -> github.Github:
     '''
-    takes access token (from credentials yaml) and returns a Github Client
-    A Git client is an integrated development environment. 
+    Args: 
+    - access_token from credentials yaml, see README instruction
+    
+    Returns:
+    - Github client (an integrated development environment)
     '''
     return github.Github(access_token)
 
@@ -72,6 +77,8 @@ def load_configurations() -> dict:
     """
     Loads all configurations from `package_manager.yml` file located in root repo
     
+    Returns:
+    - dictionary object of configurations that were defined in yml
     """
     with open("package_manager.yml") as file:
         config = ruamel.yaml.load(file, Loader=ruamel.yaml.RoundTripLoader, preserve_quotes=True)        
@@ -80,13 +87,26 @@ def load_configurations() -> dict:
 def setup_repo(client: github.Github, repo_name: str, branch_name: str) -> github.Repository.Repository:
     '''
     returns the github repo so we can interact with it
+
+    Args:
+    - Github client (from get_github_client())
+    - repo name
+    - branch name (from set_default())
+
+    Returns:
+    - Github repo object
     '''
     repo = client.get_repo("Fivetran/" + repo_name)
     return repo
 
 def clone_repo(gh_link: str, path_to_repository: str, ssh_key: str) -> None:
     ''' 
-    returns a cloned repo -> this will get put in the root/repositories/ folder
+    creates (but doesn't return) a cloned repo -> this will get put in the root/repositories/ folder
+
+    Args:
+    - github repo link
+    - path to repostiory
+    - ssh key you created (see README Credential instructions)
     '''
     try:
         default_branch = "master"
@@ -102,6 +122,12 @@ def get_file_paths(repo: github.Repository.Repository) -> list:
     '''
     takes GitHub repository object as input and returns a list of file paths in the repository that
     meet the requirements in the last `if` statement of this function
+
+    Args:
+    - github repo object from setup_repo()
+
+    Returns:
+    - list of file paths in the repo 
     '''
     file_path_list = []
     repo_contents = repo.get_contents("") # "" as the `path` loads the contents of the root directory
@@ -123,7 +149,10 @@ def get_file_paths(repo: github.Repository.Repository) -> list:
 def remove_files(file_paths: list, path_to_repository: str) -> None:
     '''
     given a list of file paths and a git repo, remove the files from the repo.
-    doesn't return anything
+
+    Args:
+    - file paths to remove 
+    - repo pathway 
     '''
     for file in file_paths: 
         try:
@@ -209,10 +238,18 @@ def add_to_file(file_paths: list, new_line: str, path_to_repository: str, insert
             print (u'\u2717', "Adding %s file %s. Error: %s..." %(new_line, file, e))
 
 def open_pull_request(repo: github.Repository.Repository, branch_name: str, default_branch: str) -> None:
-    body = """This pull request was created automatically 🎉:\n- [ ] Ensure `.buildkite/scripts/run_models.sh` has the new run-operation line\n- [ ] Update the package version (currently `v0.UPDATE.UPDATE`) in the `CHANGELOG`\n- [ ] Update project versions in the `dbt_project.yml` and `integration_tests/dbt_project.yml` files\n- [ ] Update Step 2 of the `README` to align either with this [source package example](https://github.com/fivetran/dbt_shopify_source/tree/main#step-2-install-the-package-skip-if-also-using-the-shopify-transformation-package) or this [transform package example](https://github.com/fivetran/dbt_shopify#step-2-install-the-package)"""
+    '''
+    Creates pull request with the following body and prints the url to the command line.
 
+    Future ideas: add other parameters to the PR a la https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#create-a-pull-request
+    - can create them as drafts first
+    - pull default title from set_defaults() method 
+    - can we add assignees or tags?
+    '''
+    body = """This pull request was created automatically 🎉:\n- [ ] Ensure `.buildkite/scripts/run_models.sh` has the new run-operation line\n- [ ] Update the package version (currently `v0.UPDATE.UPDATE`) in the `CHANGELOG`\n- [ ] Update project versions in the `dbt_project.yml` and `integration_tests/dbt_project.yml` files\n- [ ] Update Step 2 of the `README` to align either with this [source package example](https://github.com/fivetran/dbt_shopify_source/tree/main#step-2-install-the-package-skip-if-also-using-the-shopify-transformation-package) or this [transform package example](https://github.com/fivetran/dbt_shopify#step-2-install-the-package)"""
+    
     pull = repo.create_pull(
-        title="Package Updater PR",
+        title="Package Updater PR", # update_pre_run
         body=body,
         head=branch_name,
         base=default_branch,
@@ -222,15 +259,17 @@ def open_pull_request(repo: github.Repository.Repository, branch_name: str, defa
 
 def update_project(repo: github.Repository.Repository, branch_name: str, config: str) -> None:
     '''
-    SCRIPT NEEDS TO BE UDPATED
+    WIP: currently does not work consistently enough. Did not work in last rollout for 1/2 of packages
+
+    Intention is to update all `dbt_project.yml` (root project and /integration_tests) for a major.minor.patch version bump
     '''
     files = ["dbt_project.yml","integration_tests/dbt_project.yml"]
     for f in files:
         project_content = repo.get_contents(f)
         project = ruamel.yaml.load(
-            project_content.decoded_content,
-            Loader=ruamel.yaml.RoundTripLoader,
-            preserve_quotes=True,
+            project_content.decoded_content, # decoded_content is in bytes? perhaps stream should = contents
+            Loader=ruamel.yaml.RoundTripLoader, # RoundTripLoader in ruamel.yaml is a loader that preserves the structure of the YAML document when loading it into a Python object. This means that the order of the keys in a dictionary, the order of the items in a list, and the nesting of objects will be preserved when the YAML document is loaded.
+            preserve_quotes=True
         )
 
         if f == "dbt_project.yml":
@@ -238,7 +277,7 @@ def update_project(repo: github.Repository.Repository, branch_name: str, config:
 
         try:
             current_version = project["version"]
-            bump_type = config["version-bump-type"]
+            bump_type = config["version-bump-type"] # perhaps this should be a function argument?
             current_version_split = current_version.split(".")
 
             if bump_type == "patch":
@@ -252,18 +291,18 @@ def update_project(repo: github.Repository.Repository, branch_name: str, config:
                 current_version_split[2] = "0"
 
             new_version = ".".join(current_version_split)
+            old_version = project["version"]
             project["version"] = new_version
 
             repo.update_file(
                 path=project_content.path,
-                message="Updating dbt version",
+                message="Updating dbt version from " + old_version + " to " + project["version"],
                 content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper, width=10000),
                 sha=project_content.sha,
                 branch=branch_name,
             )
         except github.GithubException as error:
-            print("dbt project.yml files not found.")
-            # print("error: ", error)
+            print("dbt project.yml files not found. Error: %s" %(error))
 
 def update_packages(repo: github.Repository.Repository, branch_name: str, config: dict) -> None:
     '''
@@ -304,16 +343,23 @@ def main():
     ## The below is required for you to clone the respective repos inside your package_manager.yml
     client = get_github_client(creds["access_token"])
 
-    write_to_directory = "repositories" ## This is the name of the directory pkgs will be cloned into
-    repository_author = Author ## Creates an Author object
-    repository_author.name = creds["repository_author_name"] ## Assigns Author object a name
-    repository_author.email = creds["repository_author_email"] ## Assigns Author object an email
+    ## This is the name of the directory pkgs will be cloned into
+    write_to_directory = "repositories" 
+
+    # Create author object
+    repository_author = Author
+    ## Assigns Author object a name
+    repository_author.name = creds["repository_author_name"] 
+    ## Assigns Author object an email
+    repository_author.email = creds["repository_author_email"] 
+    ## Store the ssh key from our credentials.yml
     ssh_key = creds["ssh_key"]
 
     ## Set to True if remote branch (or PR) already exists; False if it does not yet exist
-    branch_exists = False
+    branch_exists = False # update_pre_run
 
     ## Iterates over all repos that are currently included in `package_manager.yml`
+    ## Make sure there aren't more than 10 or so packages uncommented out 
     for repo_name in config["repositories"]:
         print ("PR in progress for: ", repo_name)
 
@@ -324,7 +370,6 @@ def main():
                             write_to_directory + '/' + repo_name )
 
         cloned_repository, default_branch = clone_repo(gh_link, path_to_repository, ssh_key)
-        
         if not branch_exists:
             print ("Creating new branch: %s... " %(branch_name))
             new_branch = cloned_repository.create_head(branch_name)
@@ -335,29 +380,13 @@ def main():
             cloned_repository.git.checkout(branch_name)
             print ("Branch already exists, checking out branch: %s..."%(branch_name))
         
-        
-        # remove_files(file_paths=files_to_remove, path_to_repository=path_to_repository)
-
-        
-        # files_to_add_to=['.buildkite/run_models.sh']
-        # drop_schema_command='dbt run-operation fivetran_utils.drop_schemas_automation --target "$db"'
-        # changelog_entry='# ' + repo_name + ' v0.UPDATE.UPDATE\n\n ## Under the Hood:\n\n- Incorporated the new `fivetran_utils.drop_schemas_automation` macro into the end of each Buildkite integration test job.\n- Updated the pull request [templates](/.github).'
-        # add_to_file(file_paths=['.buildkite/scripts/run_models.sh'], new_line=drop_schema_command, path_to_repository=path_to_repository, insert_at_top=False)
-        # add_to_file(file_paths=['CHANGELOG.md'], new_line=changelog_entry, path_to_repository=path_to_repository, insert_at_top=True)
-        
-        # files_to_remove=['.github/pull_request_template.md']
-        # files_to_add=['.github/PULL_REQUEST_TEMPLATE/', '.github/pull_request_template.md']
-
-        # '.github/PULL_REQUEST_TEMPLATE/maintainer_pull_request_template.md'
+        ## Call the file manipulation functions here!
         
         # remove_files(file_paths=files_to_remove, path_to_repository=path_to_repository)
         # add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
-        # add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
+        # add_to_file(file_paths=files_to_add_to, new_line='\n', path_to_repository=path_to_repository, insert_at_top=false)
 
-        # find_and_replace(file_paths, config["find-and-replace-list"], path_to_repository, cloned_repository)
-        # print (u'\u2713', "Finished replacing values in files")
-
-
+        # add and commit our changes to remote
         cloned_repository.git.add(all=True)    
         cloned_repository.index.commit(commit_message.format(branch_name), author=repository_author)
         print("Committed changes...")
@@ -371,20 +400,6 @@ def main():
             origin.push(branch_name)
         print("Pushed to remote...")
 
-        ## The following two try statements will need to be updated once their functions are updated and made sure to successfully run across all instances
-        # try:
-        #     update_project(repo, branch_name, config)
-        #     print("Updated project versions...")
-        # except: 
-        #     print("Updating project versions FAILED...")
-
-        # try:
-        #     update_packages(repo, branch_name, config)
-        #     print("Updated package versions...")
-        # except:
-        #     print("Updating packages FAILED...")
-
-        
 
 if __name__ == "__main__":
     main()

@@ -4,50 +4,48 @@ The purpose of this package is to enable the Solutions Analytics team at Fivetra
 
 ## Installation and Usage Instructions
 
-### Setting up your environment
+### Setting up your Environment
 1. Clone this repo and checkout on `main`
-2. Set up a local virtual environment
-    - Navigate to the location of this cloned repo
-    - Create a virtual environment
-3. If you already have a preferred approach for creating a Python virtual environment, skip this step. Creating a virtual environment, you can do the below within your cloned repo:
+2. Navigate to the location of this cloned repo
+3. Set up a local virtual environment:
+
+If you already have a preferred approach for creating a Python virtual environment, skip this step. If not, within your cloned repo, run the following:
 ```bash
 pip install virtualenv # once 
 virtualenv venv # once
-source venv/bin/activate # everytime
+source venv/bin/activate # everytime you want to activate the virtual env
 ```
-4. Install necessary dependencies:
+4. Install necessary dependencies in your virtual env:
 ```bash
 pip install -r requirements.txt
 ```
 
-> If you get conflicting versions errors at this step, you may need to investigate PyPi and update (or rollback) version ranges to algin.
+(For Fivetran Solutions team) If you are running into errors on installing the `requirements.txt` or other issues with your virtual environment, please try the venv file for this use case in our team's shared vault. If it's still not working, you may need to investigate PyPi and update (or rollback) version ranges to avoid conflicts.
 
-5. (For Fivetran Solutions team) If you are running into errors on installing the `requirements.txt` or other issues with your virtual environment, please try the venv file for this use case in our shared vault.
-
-6. After setting up the below for prerequisites you can start running your script.
-    - You will need to remove the `repositories` directory or just the subdirectory pertaining to the repo you are updating for if you are re-running updates for the same repo.
-    - Run your script with the below:
-    ```bash
-    python3 main.py 
-    ```
-
-# Using the Package Updater for mass repo updates
-
-## Prerequisites 
+## Setting up Credentials 
 - Create a `credentials.yml` file that resembles `samples.credentials.yml`.  
     - You will first need to [create an ssh key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) locally and then add it to your `github/settings/ssh and gpg keys`. Remember to configure SSO and authorize Fivetran. 
     - You will need to create a token in Github. Navigate to `github/settings/developer settings/personal access tokens/tokens classic` and create a new token. Name it clearly. Select the settings you need for this token. Set an expiration. Copy and paste the token into your `credentials.yml` file.
 
+### Running the Script
 - Update the `package_manager.yml` for all packages you wish to perform the updates on. To be on the safe side of API limits, you may need to only run the script on a subset of data at a time. In other words, you will need to comment out packages and run the updater on about 10 a time.
-
 - If you are creating branches for the first time -- you will need to make sure in `main.py` you set `branch_exists = False`. If you are updating branches that already have changes, you will need to set `branch_exists = True`. 
+- If you have already run the script on a repository on some repos and want to re-run it on those some repositories, you will need to remove the `repositories` directory that gets created locally. At the very least, you will need to remove the specific package repos you are re-running the script on from the `repositories` folder.
 
-## Customization
+
+Continue reading for configurations to set beforehand, but this is the command you will run in your virual env to run the script.
+```bash
+python3 main.py 
+```
+
+## Configurations
 ### Setting up Branch Names and Commit Messages
-You can update the values in `set_defaults()` to your desired branch name and commit message. 
+You can update the values in the `set_defaults()` method in `main.py` to your desired branch name and commit message.
+
+If your branch name is new, set `branch_exists` in the `main()` function to `false`.
 
 ### Creating a PR checklist
-You can navigate to `open_pull_request()` and update "body" with your checklist. The list needs to be a one-liner or else the formatting gets thrown off.
+You can navigate to `open_pull_request()` and update "body" with your checklist. The list needs to be a one-liner or else the formatting gets thrown off. Include `\n`'s to format it nicely. 
 
 ## Features
 ### Removing Files (source)
@@ -70,6 +68,10 @@ files_to_add = ['integration_tests/requirements2.txt']
 ```
 
 ### Adding to Files
+To add to files, navigate to the main function and add a call to this function:
+```python
+add_to_file(file_paths=['files_i_want_to_add_the_same_thing_to',..], new_line='fun new line of code', path_to_repository=path_to_repository, insert_at_top=False/True)
+```
 
 ### Finding and Replacing Values (Minor WIP)
 Currently, this function has quite a bit of hard coded logic that will need to be made more flexible. The current function is from the latest migration mass update (dbt utils v1.0 migration + buildkite). 
@@ -83,11 +85,4 @@ To find and replace certain values, for example, you will need to:
 Currently, this function does not perform as easily as desired. Will need to be updated. The intention is to update all `packages.yml` files such that a new version bump is incorporated for relevant packages without having to specify specific package versions for all packages (current implementation).
 
 ### 🚧 Updating dbt_project.yml (Big WIP) 🚧
-Currently, this function does not perform as consistently as desired. Will need to be updated. The intention is to update all `dbt_project.yml` (root project and integration_tests) for a minor/major version bump. In the last roll out, we discovered that this wasn't working for roughly half our packages. 
-
-
-
-
-
-
-
+Currently, this function does not perform as consistently as desired. Will need to be updated. The intention is to update all `dbt_project.yml` (root project and /integration_tests) for a minor/major version bump. In the last roll out, we discovered that this wasn't working for roughly half our packages. 
