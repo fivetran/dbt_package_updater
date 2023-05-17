@@ -1,6 +1,8 @@
 import yaml
 import re
 import os
+from github import Github
+from math import floor
 
 # Function to load yaml files as dictionaries
 def load_yml(yml_name) -> dict:
@@ -11,77 +13,82 @@ def load_yml(yml_name) -> dict:
 base_url = 'https://api.github.com'
 branch_name = 'MagicBot/databricks-compatibility'  # Name of the new branch to create
 
-repo_file = load_yml('../packages.yml')
+repo_file = load_yml('.databricks_pkgs.yml')
 repos = repo_file['repositories']
 
-modifications = {
-    '.buildkite/hooks/pre-command': {
-        'add_lines': [
-            'export CI_DATABRICKS_DBT_CATALOG=$(gcloud secrets versions access latest --secret="CI_DATABRICKS_DBT_CATALOG" --project="dbt-package-testing-363917")'
-        ]
-    },
-    '.buildkite/pipeline.yml': {
-        'add_lines': [
-            '  - label: ":databricks: Run Tests - Databricks"',
-            '    key: "run_dbt_databricks"',
-            '    plugins:',
-            '      - docker#v3.13.0:',
-            '          image: "python:3.8"',
-            '          shell: [ "/bin/bash", "-e", "-c" ]',
-            '          environment:',
-            '            - "BASH_ENV=/tmp/.bashrc"',
-            '            - "CI_DATABRICKS_DBT_HOST"',
-            '            - "CI_DATABRICKS_DBT_HTTP_PATH"',
-            '            - "CI_DATABRICKS_DBT_TOKEN"',
-            '            - "CI_DATABRICKS_DBT_CATALOG"',
-            '    commands: |',
-            '      bash .buildkite/scripts/run_models.sh databricks'
-        ]
-    },
-    'integration_tests/ci/sample.profiles.yml': {
-        'replace_text': {
-            'old_text': 'catalog: null',
-            'new_text': '''catalog: "{{ env_var('CI_DATABRICKS_DBT_CATALOG') }}"'''
-        }
-    },
-    'integration_tests/dbt_project.yml': {
-        'add_lines': [
-            'dispatch:',
-            '  - macro_namespace: dbt_utils',
-            '''    search_order: ['spark_utils', 'dbt_utils']'''
-        ]
-    },
-    'CHANGELOG.md': {
-        'changelog': [
-            '## 🎉 Feature Update 🎉',
-            '- Databricks compatibility! ([#__](https://github.com/fivetran/dbt_mixpanel/pull/##))\n'
-        ]
-    },
-    'models/src_': {
-        'src_yml'
-    }
-}
+# Authenticate with Github API using personal access token
+creds = load_yml('../credentials.yml')
+access_token = creds['access_token']
 
-def modify_file(file_content, modification, short_name):
+# Create a PyGithub instance using the access token
+g = Github(access_token)
+
+def modify_file(file_content, modification):
+    modified_content = file_content
     if 'add_lines' in modification:
         lines_to_add = modification['add_lines']
-        modified_content = file_content + '\n' + '\n'.join(lines_to_add)
-    elif 'replace_text' in modification:
+        modified_content = modified_content + '\n' + '\n'.join(lines_to_add)
+    if 'replace_text' in modification:
         old_text = modification['replace_text']['old_text']
         new_text = modification['replace_text']['new_text']
-        modified_content = file_content.replace(old_text, new_text)
-    elif 'changelog' in modification:
-        lines_to_add = modification['changelog']
-        new_header = f'# dbt_{short_name} v0.X.X\n'
-        modified_content = new_header + '\n'.join(lines_to_add)+ '\n' + file_content + '\n'
-    elif 'src_yml' in modification:
-        pattern = r'database:.*".*"'
-        replacement = r"""database: "{% if target.type != 'spark' %}{{ var('""" + short_name + r'''_database', target.database)}}{% endif %}"'''
-        modified_content = re.sub(pattern, replacement, file_content)
-    else:
-        modified_content = file_content
-    
+        modified_content = modified_content.replace(old_text, new_text)
+    if 'add_to_front' in modification:
+        lines_to_add = modification['add_to_front']
+        modified_content = '\n'.join(lines_to_add)+ f'\n{modified_content}'
+    if 'regex' in modification:
+        pattern = modification['regex']['pattern']
+        replacement = modification['regex']['replacement']
+        modified_content = re.sub(pattern, replacement, modified_content)
+    if 'chglog' in modification:
+        pattern = modification['chglog']['pattern']
+        replacement = modification['chglog']['replacement']
+        modified_content = re.sub(pattern, replacement, modified_content, flags=re.DOTALL)
+
     return modified_content
+
+modifications = {
+        '.buildkite/hooks/pre-command': {
+            'add_lines': [
+                'export CI_DATABRICKS_DBT_CATALOG=$(gcloud secrets versions access latest --secret="CI_DATABRICKS_DBT_CATALOG" --project="dbt-package-testing-363917")'
+            ]
+        },
+        '.buildkite/pipeline.yml': {
+            'add_lines': [
+                '  - label: ":databricks: Run Tests - Databricks"',
+                '    key: "run_dbt_databricks"',
+                '    plugins:',
+                '      - docker#v3.13.0:',
+                '          image: "python:3.8"',
+                '          shell: [ "/bin/bash", "-e", "-c" ]',
+                '          environment:',
+                '            - "BASH_ENV=/tmp/.bashrc"',
+                '            - "CI_DATABRICKS_DBT_HOST"',
+                '            - "CI_DATABRICKS_DBT_HTTP_PATH"',
+                '            - "CI_DATABRICKS_DBT_TOKEN"',
+                '            - "CI_DATABRICKS_DBT_CATALOG"',
+                '    commands: |',
+                '      bash .buildkite/scripts/run_models.sh databricks\n'
+            ]
+        },
+        'integration_tests/ci/sample.profiles.yml': {
+            'replace_text': {
+                'old_text': 'catalog: null',
+                'new_text': r'''catalog: "{{ env_var('CI_DATABRICKS_DBT_CATALOG') }}"'''
+            }
+        },
+        'integration_tests/dbt_project.yml': {
+            'add_lines': [
+                'dispatch:',
+                '  - macro_namespace: dbt_utils',
+                '''    search_order: ['spark_utils', 'dbt_utils']'''
+            ],
+            'regex':{}
+        },
+        # dynamically set in for loop:
+        'CHANGELOG.md': {},
+        'models/src_': {}, 
+        'dbt_project.yml': {}
+    }
 
 try:
     os.mkdir('dbt_packages')
@@ -91,13 +98,58 @@ except:
 
 for repo_name in repos:
 
-    short_name = repo_name.replace('dbt_','').replace('_source','')
-    print(f'Starting updates for {short_name}')
-
     try:
+        short_name = repo_name.strip('dbt_')
+        base_name = short_name.strip('_source')
+
         # Clone the repository locally
         repo_directory = repo_name
         repo_url = f'https://github.com/fivetran/{repo_name}.git'
+
+        # Get the remote repository info
+        repo = g.get_repo(f"fivetran/{repo_name}")
+
+        # Determine next version
+        latest_release = floor(float(repo.get_latest_release().tag_name.strip('v0.')) + 1)
+        next_version = '0.' + str(latest_release) + '.0'
+
+        # Get next PR number
+        pull_requests = list(repo.get_pulls(state='all'))
+        issues = list(repo.get_issues(state='all'))
+        all_items = pull_requests + issues
+        max_number = max([item.number for item in all_items])
+        next_pr = max_number + 1
+
+        # Get package updater PR number
+        # Search for the pull request by title
+        pkg_pr_no = [pr.number for pr in pull_requests if pr.title == 'Package Updater PR'][0] 
+        pkg_pr_link = f'([#{pkg_pr_no}](https://github.com/fivetran/{repo_name}/pull/{pkg_pr_no}))'
+
+        modifications['CHANGELOG.md']['add_to_front'] = [
+            f'# dbt_{short_name} v{next_version}',
+            '## 🎉 Feature Update 🎉',
+            f'- Databricks compatibility! ([#{next_pr}](https://github.com/fivetran/{repo_name}/pull/{next_pr}))\n'
+        ]
+        modifications['CHANGELOG.md']['chglog'] = {
+            'pattern': f'# {repo_name} v0.UPDATE.UPDATE' + r'(.+?)' + re.escape('[templates](/.github).'),
+            'replacement': f'''## 🚘 Under the Hood 🚘
+- Incorporated the new `fivetran_utils.drop_schemas_automation` macro into the end of each Buildkite integration test job. {pkg_pr_link}
+- Updated the pull request [templates](/.github). {pkg_pr_link}
+'''
+        }
+        modifications['models/src_']['regex'] = {
+            'pattern': r'database:.*".*"',
+            'replacement': r"""database: "{% if target.type != 'spark' %}{{ var('""" + base_name + r'''_database', target.database)}}{% endif %}"'''
+        }
+        modifications['dbt_project.yml']['regex'] = {
+            'pattern': r"version:.*'.*'",
+            'replacement': f"version: {next_version}"
+        }
+        modifications['integration_tests/dbt_project.yml']['regex'] = {
+            'pattern': r"version:.*'.*'",
+            'replacement': f"version: {next_version}"
+        }
+
         try:
             # Navigate into the cloned repository directory
             os.chdir(repo_directory)
@@ -121,16 +173,15 @@ for repo_name in repos:
             for file_path, modification in modifications.items():
                 # Make the desired changes to the file
                 try:
-                    if 'src_yml' in modification:
-                        file_path = file_path + short_name +'.yml'
+                    if 'models/src_' in file_path and '_source' in repo_name:
+                        file_path = file_path + base_name +'.yml'
                     with open(file_path, 'r') as file:
                         existing_content = file.read()
                 except:
-                    print(f'Could not open {repo_name}:{file_path}, or it does not exist.')
                     continue
 
                 # Modify the file content
-                modified_content = modify_file(existing_content, modification, short_name)
+                modified_content = modify_file(existing_content, modification)
 
                 # Write changes to the file
                 with open(file_path, 'w') as file:
@@ -140,15 +191,40 @@ for repo_name in repos:
         except Exception as e:
             print(f'Error applying changes to {file_path}. {e}')
 
-        # # Commit the changes once it's all done
-        # os.system(f'git commit -am "{branch_name} updates"')
+        # Commit the changes once it's all done
+        os.system(f'git commit -am "{branch_name} updates"')
 
-        # # Push the changes to the remote repository
-        # os.system(f'git push origin HEAD:{branch_name}')
+        # Push the changes to the remote repository
+        os.system(f'git push origin HEAD:{branch_name}')
 
-        # print(f'Successfully pushed updates to {repo_name} in the new branch {branch_name}')
+        print(f'Pushed updates to {repo_name} in the new branch {branch_name}')
+
+#         # Create PR now that the branch is pushed
+#         pr_title = 'Feature: Databricks compatibility'
+
+#         # Create PR
+#         if '_source' in repo_name:
+#             src_yml_update = f'- [ ] `{short_name}.yml` database logic updated\n' # only add this for source packages
+#         else:
+#             src_yml_update = '\n'
+#         pr_body = f'''Confirm the following files were correctly updated automatically:
+# - [ ] `hooks/pre-command` line added
+# - [ ] `pipeline.yml` section added
+# - [ ] `sample.profiles.yml` catalog updated
+# - [ ] `integration_tests/dbt_project.yml` section added (check for dupes though)
+# {src_yml_update}
+# - [ ] Version updates for `dbt_project.yml` and `integration_tests/dbt_project.yml`
+
+# Manual updates are:
+# - [ ] README
+# - [ ] Incremental Models
+#             '''
+#         pull_request = repo.create_pull(title=pr_title, body=pr_body, base='main', head=branch_name)
+#         pr_number = pull_request.number
+#         print(f"Pull request #{pr_number} created: {pull_request.html_url}")
+        print(f'{repo_name} updates complete.')
+        os.chdir('..')
 
     except Exception as e:
         print(f'Error updating {repo_name}: {str(e)}')
 
-    os.chdir('..')
