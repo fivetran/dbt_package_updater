@@ -1,5 +1,5 @@
 repositories:
-  # - dbt_asana
+  - dbt_asana
   # - dbt_asana_source
   # - dbt_greenhouse
   # - dbt_greenhouse_source

@@ -10,7 +10,6 @@ def load_yml(yml_name) -> dict:
         contents = yaml.load(file, Loader=yaml.FullLoader)
     return contents
 
-base_url = 'https://api.github.com'
 branch_name = 'MagicBot/databricks-compatibility'  # Name of the new branch to create
 
 repo_file = load_yml('.databricks_pkgs.yml')
@@ -199,29 +198,29 @@ for repo_name in repos:
 
         print(f'Pushed updates to {repo_name} in the new branch {branch_name}')
 
-#         # Create PR now that the branch is pushed
-#         pr_title = 'Feature: Databricks compatibility'
+        # Create PR now that the branch is pushed
+        pr_title = 'Feature: Databricks compatibility'
 
-#         # Create PR
-#         if '_source' in repo_name:
-#             src_yml_update = f'- [ ] `{short_name}.yml` database logic updated\n' # only add this for source packages
-#         else:
-#             src_yml_update = '\n'
-#         pr_body = f'''Confirm the following files were correctly updated automatically:
-# - [ ] `hooks/pre-command` line added
-# - [ ] `pipeline.yml` section added
-# - [ ] `sample.profiles.yml` catalog updated
-# - [ ] `integration_tests/dbt_project.yml` section added (check for dupes though)
-# {src_yml_update}
-# - [ ] Version updates for `dbt_project.yml` and `integration_tests/dbt_project.yml`
+        # Create PR
+        if '_source' in repo_name:
+            src_yml_update = f'- [ ] `{short_name}.yml` database logic updated\n' # only add this for source packages
+        else:
+            src_yml_update = '\n'
+        pr_body = f'''Confirm the following files were correctly updated automatically:
+- [ ] `hooks/pre-command` line added
+- [ ] `pipeline.yml` section added
+- [ ] `sample.profiles.yml` catalog updated
+- [ ] `integration_tests/dbt_project.yml` section added (check for dupes though)
+{src_yml_update}
+- [ ] Version updates for `dbt_project.yml` and `integration_tests/dbt_project.yml`
 
-# Manual updates are:
-# - [ ] README
-# - [ ] Incremental Models
-#             '''
-#         pull_request = repo.create_pull(title=pr_title, body=pr_body, base='main', head=branch_name)
-#         pr_number = pull_request.number
-#         print(f"Pull request #{pr_number} created: {pull_request.html_url}")
+Manual updates are:
+- [ ] README
+- [ ] Incremental Models
+            '''
+        pull_request = repo.create_pull(title=pr_title, body=pr_body, base='main', head=branch_name)
+        pr_number = pull_request.number
+        print(f"Pull request #{pr_number} created: {pull_request.html_url}")
         print(f'{repo_name} updates complete.')
         os.chdir('..')
 
