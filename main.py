@@ -61,13 +61,13 @@ def main():
         cloned_repository, default_branch = repo_lib.clone_repo(gh_link, path_to_repository, ssh_key)
         
         # Essentially run `$ git checkout -b branch_name` (maybe move to pr_lib?)
-        if not cloned_repository.get_branch(branch_name):
-            print ("Creating new branch: %s... " %(branch_name))
+        try: 
             new_branch = cloned_repository.create_head(branch_name) # Create branch if it doesn't exist
+            print ("Creating new branch: %s... " %(branch_name))
             new_branch.checkout()
             print (u'\u2713', "New branch %s created..." %(branch_name))
             print (u'\u2713', "Checking out branch: %s..." %(branch_name))
-        else:
+        except:
             cloned_repository.git.checkout(branch_name)
             print ("Branch already exists, checking out branch: %s..."%(branch_name))
         

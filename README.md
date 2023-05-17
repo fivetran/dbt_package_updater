@@ -56,6 +56,9 @@ files_to_remove = ['integration_tests/requirements.txt']
 ```
 
 Then call the `remove_files()` function in `main()`.
+```python
+package_updates.remove_files(file_paths=files_to_remove, path_to_repository=path_to_repository)
+```
 
 ### Adding Files ([source](package_updates.py))
 To add files, navigate to the main function and find the variable `files_to_add`. You can update this list with the files' file paths you would like to add. The path starts from the root directory of the dbt project you are updating. You will need to add the files into the `dbt_package_updater/docs` folder under the same structure as the dbt project you are updating. 
@@ -70,11 +73,14 @@ files_to_add = ['integration_tests/requirements2.txt']
 ```
 
 Then call the `add_files()` function in `main()`.
+```python
+package_updates.add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
+```
 
 ### Adding _to_ Files ([source](package_updates.py))
 To add to files, navigate to the main function and add a call to this function:
 ```python
-add_to_file(file_paths=['files_i_want_to_add_the_same_thing_to',..], new_line='fun new line of code', path_to_repository=path_to_repository, insert_at_top=False/True)
+package_updates.add_to_file(file_paths=['files_i_want_to_add_the_same_thing_to',..], new_line='fun new line of code', path_to_repository=path_to_repository, insert_at_top=False/True)
 ```
 
 ### Finding and Replacing Values (Minor WIP) ([source](package_updates.py))
