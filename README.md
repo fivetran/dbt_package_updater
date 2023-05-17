@@ -39,23 +39,25 @@ python3 main.py
 ```
 
 ## Configurations
-### Setting up Branch Names and Commit Messages
-You can update the values in the `set_defaults()` method in `main.py` to your desired branch name and commit message.
+### Setting up Branch Names and Commit Messages ([source](pull_request_lib.py))
+You can update the values in the `set_defaults()` method in `pull_request_lib.py` to your desired branch name and commit message.
 
-If your branch name is new, set `branch_exists` in the `main()` function to `false`.
+If your branch name is new, set `branch_exists` in the `main()` function to `false`. (may not be necessary anymore - jamie needs to test)
 
 ### Creating a PR checklist
 You can navigate to `open_pull_request()` and update "body" with your checklist. The list needs to be a one-liner or else the formatting gets thrown off. Include `\n`'s to format it nicely. 
 
 ## Features
-### Removing Files (source)
+### Removing Files ([source](package_updates.py))
 To remove files, navigate to the `main` function and find the variable `files_to_remove`. You can update this list with the files' file paths you would like to remove. The path starts from the root directory of the dbt project you are updating. For example, to remove your `integration_tests/requirements.txt` you would declare the `files_to_remove` variable like so:
 
 ```python
 files_to_remove = ['integration_tests/requirements.txt']
 ```
 
-### Adding Files
+Then call the `remove_files()` function in `main()`.
+
+### Adding Files ([source](package_updates.py))
 To add files, navigate to the main function and find the variable `files_to_add`. You can update this list with the files' file paths you would like to add. The path starts from the root directory of the dbt project you are updating. You will need to add the files into the `dbt_package_updater/docs` folder under the same structure as the dbt project you are updating. 
 
 For example, if you want to add a new `requirements2.txt` file into your integration test directory on your dbt project you would:
@@ -67,13 +69,15 @@ For example, if you want to add a new `requirements2.txt` file into your integra
 files_to_add = ['integration_tests/requirements2.txt']
 ```
 
-### Adding to Files
+Then call the `add_files()` function in `main()`.
+
+### Adding _to_ Files ([source](package_updates.py))
 To add to files, navigate to the main function and add a call to this function:
 ```python
 add_to_file(file_paths=['files_i_want_to_add_the_same_thing_to',..], new_line='fun new line of code', path_to_repository=path_to_repository, insert_at_top=False/True)
 ```
 
-### Finding and Replacing Values (Minor WIP)
+### Finding and Replacing Values (Minor WIP) ([source](package_updates.py))
 Currently, this function has quite a bit of hard coded logic that will need to be made more flexible. The current function is from the latest migration mass update (dbt utils v1.0 migration + buildkite). 
 
 To find and replace certain values, for example, you will need to:
@@ -81,8 +85,9 @@ To find and replace certain values, for example, you will need to:
 1. Update your `find-and-replace-list` values inside your `package_manager.yml` file to include all the values you wish to replace. 
 2. Update the `find_and_replace()` function in your `main.py` to execute the logic you would like to implement. 
 
-### 🚧 Updating packages.yml (Big WIP) 🚧
+
+### 🚧 Updating packages.yml (Big WIP) 🚧 ([source](package_updates.py))
 Currently, this function does not perform as easily as desired. Will need to be updated. The intention is to update all `packages.yml` files such that a new version bump is incorporated for relevant packages without having to specify specific package versions for all packages (current implementation).
 
-### 🚧 Updating dbt_project.yml (Big WIP) 🚧
+### 🚧 Updating dbt_project.yml (Big WIP) 🚧 ([source](package_updates.py))
 Currently, this function does not perform as consistently as desired. Will need to be updated. The intention is to update all `dbt_project.yml` (root project and /integration_tests) for a minor/major version bump. In the last roll out, we discovered that this wasn't working for roughly half our packages. 
