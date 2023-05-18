@@ -5,9 +5,9 @@ fivetran-utils-version: [">=0.4.0", "<0.5.0"]
 version-bump-type: minor
 
 ## Proposed replacement to find-and-replace-list
-# find-and-replace-dict:
-# - find: find_this
-#   replace: replace_with_this
+find-and-replace-dict:
+- find: connector
+  replace: connector_THIS_WORKED
 # - find: dbt_utils.any_value
 #   replace: dbt.any_value
 

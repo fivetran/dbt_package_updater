@@ -51,11 +51,9 @@ def add_files(file_paths: list, path_to_repository: str) -> None:
         except Exception as e:
             print (u'\u2717', "Adding file %s. Error: %s..." %(file, e))
 
-def find_and_replace(file_paths: list, find_and_replace_list: list, path_to_repository: str) -> None:
+def find_and_replace(file_paths: list, find_and_replace_dict: dict, path_to_repository: str) -> None:
     '''
     find and replace text in given file paths.
-
-    Future idea: turn `find_and_replace_list` into `find_and_replace_dict`
     '''
     num_files_to_update=len(file_paths)
     num_current_file=0
@@ -65,16 +63,11 @@ def find_and_replace(file_paths: list, find_and_replace_list: list, path_to_repo
         path_to_repository_file = os.path.join(path_to_repository, checked_file)
         repo_file = pathlib.Path(path_to_repository_file)
         if repo_file.exists():
-            for texts in find_and_replace_list:
-                # this code is for changing the alias of stuff
-                text_to_find = "dbt_utils." + texts
-                text_to_replace = "dbt." + texts
-                if text_to_find == "dbt_utils.surrogate_key":
-                    text_to_replace = "dbt_utils.generate_surrogate_key"
+            for texts in find_and_replace_dict:
                 file = open(path_to_repository_file, 'r') # open the file for reading
                 current_file_data = file.read() # load in the file content
                 file.close() # close the file
-                new_file_data = current_file_data.replace(text_to_find, text_to_replace) # replace strings
+                new_file_data = current_file_data.replace(texts['find'], texts['replace']) # replace strings
                 file = open(path_to_repository_file, 'w') # reopen the file for writing
                 file.write(new_file_data) # overwrite the file
                 file.close() # close the file

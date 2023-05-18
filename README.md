@@ -29,7 +29,6 @@ pip install -r requirements.txt
 
 ### Running the Script
 - Update the `package_manager.yml` for all packages you wish to perform the updates on. To be on the safe side of API limits, you may need to only run the script on a subset of data at a time. In other words, you will need to comment out packages and run the updater on about 10 a time.
-- If you are creating branches for the first time -- you will need to make sure in `main.py` you set `branch_exists = False`. If you are updating branches that already have changes, you will need to set `branch_exists = True`. 
 - If you have already run the script on a repository on some repos and want to re-run it on those some repositories, you will need to remove the `repositories` directory that gets created locally. At the very least, you will need to remove the specific package repos you are re-running the script on from the `repositories` folder.
 
 
@@ -38,16 +37,14 @@ Continue reading for configurations to set beforehand, but this is the command y
 python3 main.py 
 ```
 
-## Configurations
+## PR Configurations
 ### Setting up Branch Names and Commit Messages ([source](pull_request_lib.py))
 You can update the values in the `set_defaults()` method in `pull_request_lib.py` to your desired branch name and commit message.
 
-If your branch name is new, set `branch_exists` in the `main()` function to `false`. (may not be necessary anymore - jamie needs to test)
-
-### Creating a PR checklist
+### Creating a PR checklist  ([source](pull_request_lib.py))
 You can navigate to `open_pull_request()` and update "body" with your checklist. The list needs to be a one-liner or else the formatting gets thrown off. Include `\n`'s to format it nicely. 
 
-## Features
+## Configuring the changes we are rolling out
 ### Removing Files ([source](package_updates.py))
 To remove files, navigate to the `main` function and find the variable `files_to_remove`. You can update this list with the files' file paths you would like to remove. The path starts from the root directory of the dbt project you are updating. For example, to remove your `integration_tests/requirements.txt` you would declare the `files_to_remove` variable like so:
 
@@ -83,14 +80,19 @@ To add to files, navigate to the main function and add a call to this function:
 package_updates.add_to_file(file_paths=['files_i_want_to_add_the_same_thing_to',..], new_line='fun new line of code', path_to_repository=path_to_repository, insert_at_top=False/True)
 ```
 
-### Finding and Replacing Values (Minor WIP) ([source](package_updates.py))
-Currently, this function has quite a bit of hard coded logic that will need to be made more flexible. The current function is from the latest migration mass update (dbt utils v1.0 migration + buildkite). 
-
+### Finding and Replacing Values ([source](package_updates.py))
 To find and replace certain values, for example, you will need to:
 
-1. Update your `find-and-replace-list` values inside your `package_manager.yml` file to include all the values you wish to replace. 
-2. Update the `find_and_replace()` function in your `main.py` to execute the logic you would like to implement. 
-
+1. Update your `find-and-replace-ldictist` values inside your `package_manager.yml` file to include all the values you wish to replace.
+```yml
+find-and-replace-dict:
+- find: find_this
+  replace: replace_with_this
+```
+2. Add a call to the `find_and_replace()` function in `main()`
+```python
+package_updates.find_and_replace(file_paths=file_paths, find_and_replace_dict=config['find-and-replace-dict'], path_to_repository=path_to_repository)
+```
 
 ### 🚧 Updating packages.yml (Big WIP) 🚧 ([source](package_updates.py))
 Currently, this function does not perform as easily as desired. Will need to be updated. The intention is to update all `packages.yml` files such that a new version bump is incorporated for relevant packages without having to specify specific package versions for all packages (current implementation).

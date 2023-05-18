@@ -9,6 +9,7 @@ import git
 import local_load_lib
 import repo_lib
 import pull_request_lib as pr_lib
+import package_updates
 
 class Author:
     '''
@@ -42,9 +43,6 @@ def main():
     ## Store the ssh key from our credentials.yml
     ssh_key = creds["ssh_key"]
 
-    ## Set to True if remote branch (or PR) already exists; False if it does not yet exist
-    branch_exists = False # update_pre_run
-
     ## Iterates over all repos that are currently included in `package_manager.yml`
     ## Make sure there aren't more than 10 or so packages uncommented out 
     ## move to own function?
@@ -61,18 +59,20 @@ def main():
         cloned_repository, default_branch = repo_lib.clone_repo(gh_link, path_to_repository, ssh_key)
         
         # Essentially run `$ git checkout -b branch_name` (maybe move to pr_lib?)
+        branch_is_new = False
         try: 
             new_branch = cloned_repository.create_head(branch_name) # Create branch if it doesn't exist
             print ("Creating new branch: %s... " %(branch_name))
             new_branch.checkout()
             print (u'\u2713', "New branch %s created..." %(branch_name))
             print (u'\u2713', "Checking out branch: %s..." %(branch_name))
+            branch_is_new = True
         except:
             cloned_repository.git.checkout(branch_name)
             print ("Branch already exists, checking out branch: %s..."%(branch_name))
         
         ## Call the file manipulation functions here!
-        
+        package_updates.find_and_replace(file_paths=file_paths, find_and_replace_dict=config['find-and-replace-dict'], path_to_repository=path_to_repository)
         # package_updates.remove_files(file_paths=files_to_remove, path_to_repository=path_to_repository)
         # package_updates.add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
         # package_updates.add_to_file(file_paths=files_to_add_to, new_line='\n', path_to_repository=path_to_repository, insert_at_top=false)
@@ -83,12 +83,13 @@ def main():
         print("Committed changes...")
         origin = cloned_repository.remote(name='origin')
     
-        if not branch_exists:
+        if branch_is_new:
             origin.push(new_branch)
             pr_lib.open_pull_request(repo, branch_name, default_branch)
             print ("PR created for: ", repo_name)
         else: 
             origin.push(branch_name)
+            print ("Committed to pre-existing PR for: ", repo_name)
         print("Pushed to remote...")
 
 
