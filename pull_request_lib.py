@@ -11,7 +11,7 @@ def set_defaults() -> str:
     
     Future: should this also set the default PR title? Should the default PR title = commit message?
     '''
-    branch_name = 'MagicBot/' + "rollout-mass-updates-2" # update_pre_run
+    branch_name = 'MagicBot/' + "rollout-mass-updates-3" # update_pre_run
     commit_message = 'Mass package update rollout ' + str(datetime.today().year) + '-' + str(datetime.today().month)
     return branch_name, commit_message
 

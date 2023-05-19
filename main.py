@@ -1,7 +1,8 @@
 
 # The os module in Python provides a portable way of using operating system dependent functionality. It provides a number of functions for interacting with the file system, processes, and other operating system resources.
 import os
-
+# high-level interface to the operating system's file manipulation functions. It provides a number of functions for copying, moving, deleting, and renaming files and directories.
+import shutil
 #  The git module in Python provides a way to interact with git repositories. It is a wrapper around the git command line tools, and it provides a high-level API for performing common git operations,
 import git
 
@@ -19,6 +20,13 @@ class Author:
     email: str
 
 def main():
+
+    if os.path.exists('repositories/'):
+        try: 
+            shutil.rmtree('repositories/')
+        except OSError as e:
+            raise OSError(f"The repositories directory cannot be removed: {e}")
+
     ## Set up & Configurations
     branch_name, commit_message = pr_lib.set_defaults()
 
@@ -51,7 +59,7 @@ def main():
 
         ## set everything up for github
         repo = repo_lib.setup_repo(client, repo_name, branch_name)
-        file_paths =repo_lib. get_file_paths(repo)
+        file_paths = repo_lib.get_file_paths(repo)
         gh_link = "git@github.com:fivetran/" + repo_name + ".git"
         path_to_repository = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             write_to_directory + '/' + repo_name )
@@ -72,7 +80,8 @@ def main():
             print ("Branch already exists, checking out branch: %s..."%(branch_name))
         
         ## Call the file manipulation functions here!
-        package_updates.find_and_replace(file_paths=file_paths, find_and_replace_dict=config['find-and-replace-dict'], path_to_repository=path_to_repository)
+        # package_updates.find_and_replace(file_paths=file_paths, find_and_replace_dict=config['find-and-replace-dict'], path_to_repository=path_to_repository)
+        package_updates.update_project(repo, path_to_repository, config)
         # package_updates.remove_files(file_paths=files_to_remove, path_to_repository=path_to_repository)
         # package_updates.add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
         # package_updates.add_to_file(file_paths=files_to_add_to, new_line='\n', path_to_repository=path_to_repository, insert_at_top=false)
@@ -83,11 +92,11 @@ def main():
         print("Committed changes...")
         origin = cloned_repository.remote(name='origin')
     
-        if branch_is_new:
+        try:
             origin.push(new_branch)
             pr_lib.open_pull_request(repo, branch_name, default_branch)
             print ("PR created for: ", repo_name)
-        else: 
+        except: 
             origin.push(branch_name)
             print ("Committed to pre-existing PR for: ", repo_name)
         print("Pushed to remote...")

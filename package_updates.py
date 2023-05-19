@@ -98,7 +98,29 @@ def add_to_file(file_paths: list, new_line: str, path_to_repository: str, insert
         except Exception as e:
             print (u'\u2717', "Adding %s file %s. Error: %s..." %(new_line, file, e))
 
-def update_project(repo: github.Repository.Repository, branch_name: str, config: str) -> None:
+def uptick_project_version(current_version: str, bump_type: str) -> str:
+    '''
+    Args: 
+    - current version of the project, parsed from its dbt_project.yml
+    - bump type to be applied: "patch", "minor", "major"
+    '''
+    current_version_split = current_version.split(".")
+
+    if bump_type == "patch":
+        current_version_split[2] = str(int(current_version_split[2]) + 1)
+    elif bump_type == "minor":
+        current_version_split[1] = str(int(current_version_split[1]) + 1)
+        current_version_split[2] = "0"
+    elif bump_type == "major":
+        current_version_split[0] = str(int(current_version_split[0]) + 1)
+        current_version_split[1] = "0"
+        current_version_split[2] = "0"
+    else: 
+        print('Not a valid bump type. No change applied to project version.')
+    new_version = ".".join(current_version_split)
+    return new_version
+
+def update_project(repo: github.Repository.Repository, path_to_repository: str, config: str) -> None:
     '''
     WIP: currently does not work consistently enough. Did not work in last rollout for 1/2 of packages
 
@@ -108,7 +130,9 @@ def update_project(repo: github.Repository.Repository, branch_name: str, config:
     - Creates changelog entry (can leveage add_to_file())
     '''
     files = ["dbt_project.yml","integration_tests/dbt_project.yml"]
+    file_paths = []
     for f in files:
+        file_paths.insert(0, os.path.join(path_to_repository, f))
         project_content = repo.get_contents(f)
         project = ruamel.yaml.load(
             project_content.decoded_content, # decoded_content is in bytes? perhaps stream should = contents
@@ -120,35 +144,22 @@ def update_project(repo: github.Repository.Repository, branch_name: str, config:
             project["require-dbt-version"] = config["require-dbt-version"]
 
         try:
-            current_version = project["version"]
-            bump_type = config["version-bump-type"] # perhaps this should be a function argument?
-            current_version_split = current_version.split(".")
-
-            if bump_type == "patch":
-                current_version_split[2] = str(int(current_version_split[2]) + 1)
-            elif bump_type == "minor":
-                current_version_split[1] = str(int(current_version_split[1]) + 1)
-                current_version_split[2] = "0"
-            elif bump_type == "major":
-                current_version_split[0] = str(int(current_version_split[0]) + 1)
-                current_version_split[1] = "0"
-                current_version_split[2] = "0"
-
-            new_version = ".".join(current_version_split)
             old_version = project["version"]
+            new_version = uptick_project_version(current_version = old_version, bump_type = config["version-bump-type"])
             project["version"] = new_version
-
-            repo.update_file(
-                path=project_content.path,
-                message="Updating dbt version from " + old_version + " to " + project["version"],
-                content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper, width=10000),
-                sha=project_content.sha,
-                branch=branch_name,
-            )
+            find_and_replace_dict = dict({'find': old_version, 'replace': new_version})
+            find_and_replace(file_paths=file_paths, find_and_replace_dict=find_and_replace_dict, path_to_repository=path_to_repository)
+            # repo.update_file(
+            #     path=project_content.path,
+            #     message="Updating dbt version from " + old_version + " to " + project["version"],
+            #     content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper, width=10000),
+            #     sha=project_content.sha,
+            #     branch=branch_name,
+            # )
         except github.GithubException as error:
             print("dbt project.yml files not found. Error: %s" %(error))
 
-def update_packages(repo: github.Repository.Repository, branch_name: str, config: dict) -> None:
+def update_packages(repo: github.Repository.Repository, branch_name: str, config: dict, source_bump_type: str) -> None:
     '''
     WIP: Currently, this function does not perform as easily as desired. Will need to be updated. 
     The intention is to update root packages.yml files such that a new version bump is incorporated for relevant packages without having to specify specific package versions for all packages.
@@ -167,7 +178,21 @@ def update_packages(repo: github.Repository.Repository, branch_name: str, config
         
         for package in packages["packages"]:
             if "package" in package and package["package"] == 'fivetran/fivetran_utils':
-                package["version"] = config['fivetran-utils-version']
+                package["version"] = config['fivetran-utils-version'] # as set in the package_manager.yml
+            if "package" in package and "fishtown" in package["package"] and source_bump_type != 'patch': # switch back to source
+                old_vesion_range = package["version"]
+                min_version = ''
+                max_version = ''
+                for char in old_vesion_range:
+                    if char.isnumeric() or char == '.':
+                        if min_version.count('.') < 2:
+                            min_version = min_version + char
+                        else:
+                            max_version = max_version + char
+                new_min_version = uptick_project_version(min_version, source_bump_type)
+                new_max_version = uptick_project_version(max_version, source_bump_type)
+                new_version_range = '[' + '">=' + new_min_version + '"' + ', "' + new_max_version + '"]'
+                package['version'] = new_version_range
 
         repo.update_file(
             path=packages_content.path,
