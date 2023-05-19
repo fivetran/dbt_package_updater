@@ -12,7 +12,7 @@ def load_yml(yml_name) -> dict:
 
 branch_name = 'MagicBot/databricks-compatibility'  # Name of the new branch to create
 
-repo_file = load_yml('.databricks_pkgs.yml')
+repo_file = load_yml('databricks_pkgs.yml')
 repos = repo_file['repositories']
 
 # Authenticate with Github API using personal access token
@@ -83,6 +83,12 @@ modifications = {
             ],
             'regex':{}
         },
+        'integration_tests/requirements.txt': {
+            'replace_text': {
+                'old_text': r'dbt-redshift>=1.3.0,<2.0.0',
+                'new_text': r'dbt-redshift>=1.3.0,<1.5.0'
+            }
+        },
         # dynamically set in for loop:
         'CHANGELOG.md': {},
         'models/src_': {}, 
@@ -98,9 +104,8 @@ except:
 for repo_name in repos:
 
     try:
-        short_name = repo_name.strip('dbt_')
-        base_name = short_name.strip('_source')
-
+        short_name = repo_name.replace('dbt_', '')
+        base_name = short_name.replace('_source', '')
         # Clone the repository locally
         repo_directory = repo_name
         repo_url = f'https://github.com/fivetran/{repo_name}.git'
@@ -113,9 +118,9 @@ for repo_name in repos:
         next_version = '0.' + str(latest_release) + '.0'
 
         # Get next PR number
-        pull_requests = list(repo.get_pulls(state='all'))
-        issues = list(repo.get_issues(state='all'))
-        all_items = pull_requests + issues
+        pull_requests = repo.get_pulls(state='all')
+        issues = repo.get_issues(state='all')
+        all_items = list(pull_requests) + list(issues)
         max_number = max([item.number for item in all_items])
         next_pr = max_number + 1
 
@@ -178,7 +183,6 @@ for repo_name in repos:
                         existing_content = file.read()
                 except:
                     continue
-
                 # Modify the file content
                 modified_content = modify_file(existing_content, modification)
 
@@ -205,21 +209,23 @@ for repo_name in repos:
         if '_source' in repo_name:
             src_yml_update = f'- [ ] `{short_name}.yml` database logic updated\n' # only add this for source packages
         else:
-            src_yml_update = '\n'
+            src_yml_update = ''
         pr_body = f'''Confirm the following files were correctly updated automatically:
 - [ ] `hooks/pre-command` line added
 - [ ] `pipeline.yml` section added
 - [ ] `sample.profiles.yml` catalog updated
 - [ ] `integration_tests/dbt_project.yml` section added (check for dupes though)
+- [ ] Version updates for `dbt_project.yml` and `integration_tests/dbt_project.yml` (automatically moved to next breaking change)
+- [ ] Changelog (automatically moved to next breaking change, but check the PR links were added correctly!)
 {src_yml_update}
-- [ ] Version updates for `dbt_project.yml` and `integration_tests/dbt_project.yml`
-
 Manual updates are:
-- [ ] README
+- [ ] `README` installation and dependencies
+- [ ] `packages.yml` for transform packages
 - [ ] Incremental Models
             '''
         pull_request = repo.create_pull(title=pr_title, body=pr_body, base='main', head=branch_name)
         pr_number = pull_request.number
+
         print(f"Pull request #{pr_number} created: {pull_request.html_url}")
         print(f'{repo_name} updates complete.')
         os.chdir('..')

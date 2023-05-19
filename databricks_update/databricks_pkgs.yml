@@ -1,5 +1,5 @@
 repositories:
-  - dbt_asana
+  # - dbt_asana
   # - dbt_asana_source
   # - dbt_greenhouse
   # - dbt_greenhouse_source
@@ -13,5 +13,5 @@ repositories:
   # - dbt_pardot_source
   # - dbt_quickbooks
   # - dbt_quickbooks_source 
-  # - dbt_xero
-  # - dbt_xero_source
+  - dbt_xero
+  - dbt_xero_source
