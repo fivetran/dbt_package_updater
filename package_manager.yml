@@ -1,24 +1,45 @@
-require-dbt-version: [">=1.3.0", "<2.0.0"]
+### This gets imported into the script as "config" via the load_configurations() method
 
+## Pull Request defaults
+pull-request-title: 'Default PR Title'
+branch-name: 'MagicBot/default-branch-name'
+commit-message: 'Default commit message'
+
+## Package file updates
+# used by update_packages()
 fivetran-utils-version: [">=0.4.0", "<0.5.0"]
 
-version-bump-type: minor
+# used by update_project() function
+version-bump-type: minor # major.minor.patch
+require-dbt-version: [">=1.4.0", "<2.0.0"] # doesn't work yet
 
-## Proposed replacement to find-and-replace-list
-find-and-replace-dict:
+# used by remove_files()
+files-to-remove:
+- '.circleci/config.yml'
+- '.circleci/'
+
+# used by add_files()
+files-to-add:
+- '.github/pull_request_template.md'
+- '.github/PULL_REQUEST_TEMPLATE/'
+
+# used by add_to_files()
+files-to-add-to:
+- file_paths: ['.buildkite/run_models.sh']
+  insert_at_top: false
+  new_line: run-operation fivetran_utils.drop_schemas --target "$db"
+- file_paths: ['integration_tests/dbt_project.yml', 'dbt_project.yml']
+  insert_at_top: true
+  new_line: \# we added a comment \#
+
+# used by find_and_replace()
+find-and-replace:
 - find: connector
   replace: connector_THIS_WORKED
-# - find: dbt_utils.any_value
-#   replace: dbt.any_value
+- find: starter
+  replace: starter_REPLACED
 
-# find-and-replace-list:
-#   - any_value
-#   - bool_or
-
-# new-lines-to-add:
-#   - dbt run-operation fivetran_utils.drop_schemas --target "$db"
-#     file_path: .buildkite/run_models.sh
-
+# Repositories to update
 repositories:
   - dbt_starter_project
   # - dbt_app_reporting 

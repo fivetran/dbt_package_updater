@@ -20,15 +20,11 @@ class Author:
     email: str
 
 def main():
-
-    if os.path.exists('repositories/'):
-        try: 
-            shutil.rmtree('repositories/')
-        except OSError as e:
-            raise OSError(f"The repositories directory cannot be removed: {e}")
+    ## This is the name of the directory pkgs will be cloned into. Lets clear it out if it exists from a previous run
+    write_to_directory = "repositories" 
+    local_load_lib.clear_working_directory(write_to_directory)
 
     ## Set up & Configurations
-    branch_name, commit_message = pr_lib.set_defaults()
 
     ## Loads credentials from your credentials.yml file, you will need to create a file that resembles `samples.credentials.yml`
     creds = local_load_lib.load_credentials()
@@ -39,67 +35,44 @@ def main():
     ## The below is required for you to clone the respective repos inside your package_manager.yml
     client = repo_lib.get_github_client(creds["access_token"])
 
-    ## This is the name of the directory pkgs will be cloned into
-    write_to_directory = "repositories" 
-
-    # Create author objects
+    # Create author object
     repository_author = Author
     ## Assigns Author object a name
     repository_author.name = creds["repository_author_name"] 
     ## Assigns Author object an email
     repository_author.email = creds["repository_author_email"] 
-    ## Store the ssh key from our credentials.yml
-    ssh_key = creds["ssh_key"]
 
     ## Iterates over all repos that are currently included in `package_manager.yml`
     ## Make sure there aren't more than 10 or so packages uncommented out 
-    ## move to own function?
+    ## maybe move to own function? 
     for repo_name in config["repositories"]:
         print ("PR in progress for: ", repo_name)
 
         ## set everything up for github
-        repo = repo_lib.setup_repo(client, repo_name, branch_name)
+        repo = repo_lib.setup_repo(client, repo_name, config['branch-name'])
         file_paths = repo_lib.get_file_paths(repo)
         gh_link = "git@github.com:fivetran/" + repo_name + ".git"
         path_to_repository = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             write_to_directory + '/' + repo_name )
 
-        cloned_repository, default_branch = repo_lib.clone_repo(gh_link, path_to_repository, ssh_key)
+        # clone the repo - this returns the git cloned repo and its default branch (main vs master)
+        cloned_repository, default_branch = repo_lib.clone_repo(gh_link, path_to_repository, creds["ssh_key"])
         
         # Essentially run `$ git checkout -b branch_name` (maybe move to pr_lib?)
-        branch_is_new = False
-        try: 
-            new_branch = cloned_repository.create_head(branch_name) # Create branch if it doesn't exist
-            print ("Creating new branch: %s... " %(branch_name))
-            new_branch.checkout()
-            print (u'\u2713', "New branch %s created..." %(branch_name))
-            print (u'\u2713', "Checking out branch: %s..." %(branch_name))
-            branch_is_new = True
-        except:
-            cloned_repository.git.checkout(branch_name)
-            print ("Branch already exists, checking out branch: %s..."%(branch_name))
-        
-        ## Call the file manipulation functions here!
-        # package_updates.find_and_replace(file_paths=file_paths, find_and_replace_dict=config['find-and-replace-dict'], path_to_repository=path_to_repository)
-        package_updates.update_project(repo, path_to_repository, config)
-        # package_updates.remove_files(file_paths=files_to_remove, path_to_repository=path_to_repository)
-        # package_updates.add_files(file_paths=files_to_add, path_to_repository=path_to_repository)
-        # package_updates.add_to_file(file_paths=files_to_add_to, new_line='\n', path_to_repository=path_to_repository, insert_at_top=false)
+        working_branch = pr_lib.checkout_branch(cloned_repository=cloned_repository, branch_name=config['branch-name'])
 
-        # add and commit our changes to remote -- maybe move to pr_lib
-        cloned_repository.git.add(all=True)    
-        cloned_repository.index.commit(commit_message.format(branch_name), author=repository_author)
-        print("Committed changes...")
-        origin = cloned_repository.remote(name='origin')
-    
-        try:
-            origin.push(new_branch)
-            pr_lib.open_pull_request(repo, branch_name, default_branch)
-            print ("PR created for: ", repo_name)
-        except: 
-            origin.push(branch_name)
-            print ("Committed to pre-existing PR for: ", repo_name)
-        print("Pushed to remote...")
+        # Apply changes to package
+        package_updates.add_to_file(files_to_add_to=config['files-to-add-to'], path_to_repository=path_to_repository)
+        package_updates.add_files(file_paths=config['files-to-add'], path_to_repository=path_to_repository)
+        package_updates.remove_files(file_paths=config['files-to-remove'], path_to_repository=path_to_repository)
+        package_updates.find_and_replace(file_paths=file_paths, find_and_replace_texts=config['find-and-replace'], path_to_repository=path_to_repository)
+        package_updates.update_project(repo=repo, path_to_repository=path_to_repository, config=config)
+
+        # Add and commit changes to branch
+        pr_lib.commit_changes(cloned_repository=cloned_repository, branch_name=config['branch-name'], commit_message=config['commit-message'], repository_author=repository_author)
+
+        # Push changes to remote and open PR if one does not already exist
+        pr_lib.push_changes(cloned_repository=cloned_repository, branch_name=config['branch-name'], repo_name=repo_name, repo=repo, default_branch=default_branch, new_branch=working_branch, pr_title=config['pull-request-title'])
 
 
 if __name__ == "__main__":

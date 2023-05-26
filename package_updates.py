@@ -14,34 +14,40 @@ import github
 # powerful and flexible YAML parser that can be used for a variety of tasks. It is a good choice for applications that require a high degree of control over the YAML format.
 import ruamel.yaml
 
+import re
+
 def remove_files(file_paths: list, path_to_repository: str) -> None:
     '''
     given a list of file paths and a git repo, remove the files from the repo.
 
     Args:
     - file paths to remove 
-    - repo pathway 
+    - cloned repo pathway 
     '''
     for file in file_paths: 
         try:
             print ("Removing file: %s..." %(file))
             path_to_repository_file = os.path.join(path_to_repository, file) # returns path_to_repository/file_path/../file.sql
-            os.remove(path_to_repository_file)
-            print (u'\u2713',"File: %s successfully removed..."%(file))
+            if os.path.isdir(path_to_repository_file):
+                shutil.rmtree(path_to_repository_file)
+                print (u'\u2713',"Folder: %s successfully removed..."%(file))
+            else:
+                os.remove(path_to_repository_file)
+                print (u'\u2713',"File: %s successfully removed..."%(file))
         except Exception as e:
             print (u'\u2717', "Removing file %s FAILED. Error: %s..." %(file, e))
 
-def add_files(file_paths: list, path_to_repository: str) -> None:
+def add_files(file_paths: list, path_to_repository: str, files_to_add_directory='files_to_add') -> None:
     '''
     given a list of file paths and a git repo, add the files to from the repo. 
-    The file paths should map onto file paths inside of the `docs/` folder of this package.
+    The file paths should map onto file paths inside of the `files_to_add/` folder of this package.
     doesn't return anything
     '''
     for file in file_paths:
         try:
             print("Adding file: %s..." %(file))
             path_to_repository_file = os.path.join(path_to_repository, file) # returns path_to_repository/file_path/../file.sql
-            file_to_add='docs/' + file # the files to add should be stored in the docs folder
+            file_to_add=files_to_add_directory + '/' + file # the files to add should be stored in the docs folder
             if os.path.isdir(file_to_add):
                 shutil.copytree(file_to_add, path_to_repository_file) # FYI copytee also has an optional `ignore` list argument if so needed
                 print (u'\u2713', "%s directory successfully added..."%(file))
@@ -51,9 +57,14 @@ def add_files(file_paths: list, path_to_repository: str) -> None:
         except Exception as e:
             print (u'\u2717', "Adding file %s. Error: %s..." %(file, e))
 
-def find_and_replace(file_paths: list, find_and_replace_dict: dict, path_to_repository: str) -> None:
+def find_and_replace(file_paths: list, find_and_replace_texts: list, path_to_repository: str) -> None:
     '''
-    find and replace text in given file paths.
+    find and replaces instances of text in the files of a repo
+
+    Args:
+    - file_paths: the repo files to be adjusted
+    - find_and_replace_texts: list configured in package_manager.yml 
+    - path_to_repository: the path to the cloned repo
     '''
     num_files_to_update=len(file_paths)
     num_current_file=0
@@ -63,7 +74,7 @@ def find_and_replace(file_paths: list, find_and_replace_dict: dict, path_to_repo
         path_to_repository_file = os.path.join(path_to_repository, checked_file)
         repo_file = pathlib.Path(path_to_repository_file)
         if repo_file.exists():
-            for texts in find_and_replace_dict:
+            for texts in find_and_replace_texts:
                 file = open(path_to_repository_file, 'r') # open the file for reading
                 current_file_data = file.read() # load in the file content
                 file.close() # close the file
@@ -74,29 +85,44 @@ def find_and_replace(file_paths: list, find_and_replace_dict: dict, path_to_repo
         else:
             print("Ignoring "+path_to_repository_file+". Not found")
 
-def add_to_file(file_paths: list, new_line: str, path_to_repository: str, insert_at_top: bool) -> None:
+def add_to_file(files_to_add_to: list, path_to_repository: str) -> None:
     '''
-    takes file paths and adds a new line either at the top or end of each file. 
-    '''
-    for file in file_paths:
-        try:
-            print("Adding %s to file: %s..." %(new_line, file))
-            path_to_repository_file = os.path.join(path_to_repository, file)
-            
-            if insert_at_top:
-                with open(path_to_repository_file, 'r') as new_file: # read in the file
-                    content = new_file.read() # load in file
-                with open(path_to_repository_file, 'w') as new_file: # read in the file but we'll write to it
-                    new_file.write(new_line + '\n') # start the file with the new line(s)
-                    new_file.write(content) # write the rest of the file
-                    print (u'\u2713', "%s successfully added to the top of file %s..."%(new_line, file))
-            else: 
-                with open(path_to_repository_file, 'a') as new_file: # open file for appending
-                    new_file.write('\n' + new_line + '\n') # write to end of file
-                    print (u'\u2713', "%s successfully added to the bottom of file %s..."%(new_line, file))
+    Takes a list of dictionaries configured as such in the config yml file:
 
-        except Exception as e:
-            print (u'\u2717', "Adding %s file %s. Error: %s..." %(new_line, file, e))
+    files-to-add-to:
+    - file_paths: ['.buildkite/run_models.sh']
+      insert_at_top: false
+      new_line: run-operation fivetran_utils.drop_schemas --target "$db"
+    
+    Args:
+    - files_to_add_to: list of dictionaries-version of the above
+    - path_to_repository: path to the cloned repo (ie 'repositories/dbt_jira')
+    '''
+    for rule in files_to_add_to:
+        insert_at_top = rule['insert_at_top']
+        new_line = rule['new_line']
+
+        for file in rule['file_paths']:
+            try:
+                print("Adding %s to file: %s..." %(new_line, file))
+                path_to_repository_file = os.path.join(path_to_repository, file)
+                repo_file = pathlib.Path(path_to_repository_file)
+                if repo_file.exists():
+                    if insert_at_top:
+                        with open(path_to_repository_file, 'r') as new_file: # read in the file
+                            content = new_file.read() # load in file
+                        with open(path_to_repository_file, 'w') as new_file: # read in the file but we'll write to it
+                            new_file.write(new_line + '\n') # start the file with the new line(s)
+                            new_file.write(content) # write the rest of the file
+                            print (u'\u2713', "%s successfully added to the top of file %s..."%(new_line, file))
+                    else: 
+                        with open(path_to_repository_file, 'a') as new_file: # open file for appending
+                            new_file.write('\n' + new_line + '\n') # write to end of file
+                            print (u'\u2713', "%s successfully added to the bottom of file %s..."%(new_line, file))
+                else:
+                    print("Ignoring "+path_to_repository_file+". Not found")
+            except Exception as e:
+                print (u'\u2717', "Adding %s file %s. Error: %s..." %(new_line, file, e))
 
 def uptick_project_version(current_version: str, bump_type: str) -> str:
     '''
@@ -140,22 +166,30 @@ def update_project(repo: github.Repository.Repository, path_to_repository: str, 
             preserve_quotes=True
         )
 
-        if f == "dbt_project.yml":
-            project["require-dbt-version"] = config["require-dbt-version"]
-
         try:
             old_version = project["version"]
             new_version = uptick_project_version(current_version = old_version, bump_type = config["version-bump-type"])
-            project["version"] = new_version
-            find_and_replace_dict = dict({'find': old_version, 'replace': new_version})
-            find_and_replace(file_paths=file_paths, find_and_replace_dict=find_and_replace_dict, path_to_repository=path_to_repository)
-            # repo.update_file(
-            #     path=project_content.path,
-            #     message="Updating dbt version from " + old_version + " to " + project["version"],
-            #     content=ruamel.yaml.dump(project, Dumper=ruamel.yaml.RoundTripDumper, width=10000),
-            #     sha=project_content.sha,
-            #     branch=branch_name,
-            # )
+
+            path_to_repository_file = os.path.join(path_to_repository, f)
+
+            # read in the file    
+            with open(path_to_repository_file, 'r') as file:
+                file_contents = file.read()
+
+            # use re module to replace package version  
+            new_contents = re.sub(old_version, new_version, file_contents)
+            
+            # use re to replace -- this currently isn't working
+            # if f == "dbt_project.yml" and config["require-dbt-version"] is not None:
+            #     print(type(project["require-dbt-version"]))
+            #     print(type(config["require-dbt-version"]))
+            #     old_dbt_version = project["require-dbt-version"]
+            #     new_dbt_version = config["require-dbt-version"]
+            #     new_contents = re.sub(old_dbt_version, new_dbt_version, file_contents)
+
+            with open(path_to_repository_file, 'w') as file:
+                file.write(new_contents)
+
         except github.GithubException as error:
             print("dbt project.yml files not found. Error: %s" %(error))
 
