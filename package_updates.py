@@ -42,6 +42,11 @@ def add_files(file_paths: list, path_to_repository: str, files_to_add_directory=
     given a list of file paths and a git repo, add the files to from the repo. 
     The file paths should map onto file paths inside of the `files_to_add/` folder of this package.
     doesn't return anything
+
+    Args:
+    - file paths: files to add (within their directory `files_to_add_directory`)
+    - path_to_repository: cloned repo
+    - files_to_add_directory = default is 'files_to_add' but can be overwritten
     '''
     for file in file_paths:
         try:
@@ -126,6 +131,8 @@ def add_to_file(files_to_add_to: list, path_to_repository: str) -> None:
 
 def uptick_project_version(current_version: str, bump_type: str) -> str:
     '''
+    Takes a x.y.z project version and bump (major.minor.patch) and returns new project version.
+
     Args: 
     - current version of the project, parsed from its dbt_project.yml
     - bump type to be applied: "patch", "minor", "major"

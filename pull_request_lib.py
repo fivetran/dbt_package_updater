@@ -67,6 +67,15 @@ def checkout_branch(cloned_repository: git.Repo, branch_name: str) -> git.refs.h
     return working_branch
 
 def commit_changes(cloned_repository: git.Repo, branch_name: str, commit_message: str, repository_author: Author) -> None:
+    '''
+    Add and commit local changes to remote.
+
+    Args:
+    - cloned_repository: where the changes were made
+    - branch_name: remote branch to push to
+    - commit_message
+    - repo author: author of the code changes/PR-to-come.
+    '''
     cloned_repository.git.add(all=True)    
     cloned_repository.index.commit(commit_message.format(branch_name), author=repository_author)
     print("Committed changes...")

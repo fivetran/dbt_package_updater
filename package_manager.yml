@@ -25,7 +25,7 @@ files-to-add:
 
 # used by add_to_files()
 files-to-add-to:
-- file_paths: ['.buildkite/run_models.sh']
+- file_paths: ['.buildkite/scripts/run_models.sh']
   insert_at_top: false
   new_line: run-operation fivetran_utils.drop_schemas --target "$db"
 - file_paths: ['integration_tests/dbt_project.yml', 'dbt_project.yml']

@@ -1,4 +1,7 @@
+# allows you to interact with GitHub repositories and other GitHub resources. It is a wrapper around the GitHub REST API, which means that it allows you to perform all of the same actions that you can perform using the GitHub web interface.
 import github
+
+## This file is not being used anywhere yet -- just a start
 
 class Package:
     '''
@@ -23,6 +26,9 @@ class Package:
 
 
 class Update:
+    '''
+    The mass-update we are applying.
+    '''
     name: str
     repos: list
     added_files = []
