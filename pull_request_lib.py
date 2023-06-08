@@ -1,29 +1,30 @@
-# provides a number of classes and functions for representing and manipulating dates and times, as well as for formatting and parsing dates and times in a variety of formats.
-from datetime import datetime
-
 # allows you to interact with GitHub repositories and other GitHub resources. It is a wrapper around the GitHub REST API, which means that it allows you to perform all of the same actions that you can perform using the GitHub web interface.
 import github
 
+#  The git module in Python provides a way to interact with git repositories. It is a wrapper around the git command line tools, and it provides a high-level API for performing common git operations,
 import git
 
 class Author:
     '''
-    defining Author object
+    defining Author object. For opening PRs, we need to provide github with an "Author" with the following attributes.
     '''
     name: str
     email: str
 
-def set_defaults() -> str:
+def get_pull_request_body(file_path: str) -> str:
     '''
-    set Branch name and commit messsage.
-    Note that the branch_exists var is set in main() - make sure that if it's set to false, there is not branch with this name in the repo 
-    
-    Future: should this also set the default PR title? Should the default PR title = commit message?
-    '''
-    branch_name = 'MagicBot/' + "rollout-mass-updates-4" # update_pre_run
-    commit_message = 'Mass package update rollout ' + str(datetime.today().year) + '-' + str(datetime.today().month)
-    return branch_name, commit_message
+    Reads the content of a Markdown file and stores it as a string.
 
+    Args:
+    file_path: The path to the Markdown file.
+
+    Returns:
+    The content of the Markdown file as a string.
+    '''
+
+    with open(file_path, 'r') as f:
+        body = f.read()
+    return body
 
 def open_pull_request(repo: github.Repository.Repository, branch_name: str, default_branch: str, pr_title: str) -> None:
     '''
@@ -34,8 +35,8 @@ def open_pull_request(repo: github.Repository.Repository, branch_name: str, defa
     - pull default title from set_defaults() method 
     - can we add assignees or tags?
     '''
-    body = """This pull request was created automatically 🎉:\n- [ ] Ensure `.buildkite/scripts/run_models.sh` has the new run-operation line\n- [ ] Update the package version (currently `v0.UPDATE.UPDATE`) in the `CHANGELOG`\n- [ ] Update project versions in the `dbt_project.yml` and `integration_tests/dbt_project.yml` files\n- [ ] Update Step 2 of the `README` to align either with this [source package example](https://github.com/fivetran/dbt_shopify_source/tree/main#step-2-install-the-package-skip-if-also-using-the-shopify-transformation-package) or this [transform package example](https://github.com/fivetran/dbt_shopify#step-2-install-the-package)"""
-    
+    # body = """This pull request was created automatically 🎉:\n- [ ] Ensure `.buildkite/scripts/run_models.sh` has the new run-operation line\n- [ ] Update the package version (currently `v0.UPDATE.UPDATE`) in the `CHANGELOG`\n- [ ] Update project versions in the `dbt_project.yml` and `integration_tests/dbt_project.yml` files\n- [ ] Update Step 2 of the `README` to align either with this [source package example](https://github.com/fivetran/dbt_shopify_source/tree/main#step-2-install-the-package-skip-if-also-using-the-shopify-transformation-package) or this [transform package example](https://github.com/fivetran/dbt_shopify#step-2-install-the-package)"""
+    body = get_pull_request_body('pull_request_body.md')
     pull = repo.create_pull(
         title=pr_title,
         body=body,

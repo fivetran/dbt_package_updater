@@ -14,7 +14,7 @@ import package_updates
 
 class Author:
     '''
-    defining Author object
+    defining Author object. For opening PRs, we need to provide github with an "Author" with the following attributes.
     '''
     name: str
     email: str
