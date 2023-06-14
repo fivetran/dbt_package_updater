@@ -72,6 +72,7 @@ def main():
         pr_lib.commit_changes(cloned_repository=cloned_repository, branch_name=config['branch-name'], commit_message=config['commit-message'], repository_author=repository_author)
 
         # Push changes to remote and open PR if one does not already exist
+        # Body of PR is configured in pull_request_body.md
         pr_lib.push_changes(cloned_repository=cloned_repository, branch_name=config['branch-name'], repo_name=repo_name, repo=repo, default_branch=default_branch, new_branch=working_branch, pr_title=config['pull-request-title'])
 
 

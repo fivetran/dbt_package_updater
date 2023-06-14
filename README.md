@@ -37,8 +37,8 @@ In `package_manager.yml`, set the title of the Mass PRs you will be rolling out:
 pull-request-title: 'Some PR Title'
 ```
 
-#### Set Pull Request Checklist/Body
-todo
+#### Create a PR checklist  ([source](pull_request_body.md))
+The body of your PR will be pulled from the `pull_request_body.md` file in this repository. Edit it to your liking (and you can Preview it in VSCode with `shift+command+v`) prior to running the script. 
 
 #### Name your Branch
 In `package_manager.yml`, name the branch each PR will be made from:
@@ -53,7 +53,7 @@ In `package_manager.yml`, set the commit message you'd like to push these change
 commit-message: 'some commit message'
 ```
 
-### Versioning Configs (WIP)
+### Versioning Configs
 #### Set Version Bump Type
 What kind of release will these changes produce with our `major`.`minor`.`patch` syntax?
 ```yml
@@ -61,12 +61,13 @@ version-bump-type: <major, minor, or patch>
 ```
 
 #### Update Required dbt Version (WIP) 🚧 
-see if i can fix
+> This currently does not work as intended. Issue 
 
 #### Update Fivetran_utils dependency version (WIP) 🚧 
 see if i can fix
+
 ### Actual Code Change Configs
-So what changes are we trying to roll out to these packages anyways?
+So what changes are we trying to roll out to these packages anyways? If you do not want to run any of the following functions, make sure the relevant `package_manager.yml` config is commented out.
 
 #### Removing Files ([source](package_updates.py))
 Update the `files-to-remove` list in `package_manager.yml` with the files' file paths you would like to remove. The path starts from the root directory of the dbt project you are updating. 
@@ -91,52 +92,36 @@ files-to-add:
 - '.buildkite/'
 - 'integration_tests/requirements2.txt.'
 ```
-#### Adding Code _to_ Files
 
-#### Find and Replace Values
+> Question for team: should we change this so that any and all files in the `files_to_add` folder get added? This would remove the need to adjust `package_manager.yml` as well.
 
+#### Adding _to_ Files ([source](package_updates.py))
+Currently, the package updater supports adding code _to_ files, either at the start or end of a file. To add new code to package files, configure `files-to-add-to` in `package_manager.yml` as such:
 
+```yml
+files-to-add-to:
+- file_paths: ['.buildkite/scripts/run_models.sh']
+  insert_at_top: false
+  new_line: run-operation fivetran_utils.drop_schemas --target "$db"
+- file_paths: ['integration_tests/dbt_project.yml', 'dbt_project.yml']
+  insert_at_top: true
+  new_line: \# look we added a comment \#
+```
+
+#### Finding and Replacing Values ([source](package_updates.py))
+To find and replace certain values, add the following to `package_manager.yml` file to include all the values you wish to replace.
+```yml
+find-and-replace:
+- find: find_this
+  replace: replace_with_this
+- find: now_find_this
+  replace: replace_with_this_thing
+```
 
 ## Step 4: Run the Script
 - Update the `package_manager.yml` for all packages you wish to perform the updates on. To be on the safe side of API limits, you may need to only run the script on a subset of data at a time. In other words, you will need to comment out packages and run the updater on about 10 a time.
-- If you have already run the script on a repository on some repos and want to re-run it on those some repositories, you will need to remove the `repositories` directory that gets created locally. At the very least, you will need to remove the specific package repos you are re-running the script on from the `repositories` folder.
-
 
 This is the command you will run in your virual env to run the script:
 ```bash
 python3 main.py 
 ```
-
-## PR Configurations
-
-### Creating a PR checklist  ([source](pull_request_lib.py))
-You can navigate to `open_pull_request()` and update "body" with your checklist. The list needs to be a one-liner or else the formatting gets thrown off. Include `\n`'s to format it nicely. 
-
-## Configuring the changes we are rolling out
-
-
-### Adding _to_ Files ([source](package_updates.py))
-To add to files, navigate to the main function and add a call to this function:
-```python
-package_updates.add_to_file(file_paths=['files_i_want_to_add_the_same_thing_to',..], new_line='fun new line of code', path_to_repository=path_to_repository, insert_at_top=False/True)
-```
-
-### Finding and Replacing Values ([source](package_updates.py))
-To find and replace certain values, for example, you will need to:
-
-1. Update your `find-and-replace-ldictist` values inside your `package_manager.yml` file to include all the values you wish to replace.
-```yml
-find-and-replace-dict:
-- find: find_this
-  replace: replace_with_this
-```
-2. Add a call to the `find_and_replace()` function in `main()`
-```python
-package_updates.find_and_replace(file_paths=file_paths, find_and_replace_dict=config['find-and-replace-dict'], path_to_repository=path_to_repository)
-```
-
-### 🚧 Updating packages.yml (Big WIP) 🚧 ([source](package_updates.py))
-Currently, this function does not perform as easily as desired. Will need to be updated. The intention is to update all `packages.yml` files such that a new version bump is incorporated for relevant packages without having to specify specific package versions for all packages (current implementation).
-
-### 🚧 Updating dbt_project.yml (Big WIP) 🚧 ([source](package_updates.py))
-Currently, this function does not perform as consistently as desired. Will need to be updated. The intention is to update all `dbt_project.yml` (root project and /integration_tests) for a minor/major version bump. In the last roll out, we discovered that this wasn't working for roughly half our packages. 
