@@ -106,12 +106,26 @@ find-and-replace:
 ```
 
 ### Versioning Configs
+How should we adjust the version of the package, any upstream dependencies, and dbt?
+
 #### Set Version Bump Type
-What kind of release will these changes produce with our `major`.`minor`.`patch` syntax?
+What kind of release will these changes produce with our `major`.`minor`.`patch` syntax? Add the following to `package_manager.yml`.
 ```yml
 version-bump-type: <major, minor, or patch>
 ```
 This will be called in the `update_project()` function.
+
+#### 🚧 Update package dependency version(s) (WIP) 🚧 
+> This currently does not work as intended. See [issue #22](https://github.com/fivetran/dbt_package_updater/issues/22).
+
+This is intended to update the ranges of package dependencies in each project's `packages.yml` file. It currently only has logic built out to change the version of `fivetran_utils` and _potentially_ a source package (not fully tested).
+
+To update the version of `fivetran_utils` that each package may depend on, add the following to `package_manager.yml`:
+```yml
+fivetran-utils-version: [">=0.4.0", "<0.5.0"] # or whatever range you want
+```
+
+The version ranges of Fivetran source packages will be informed by the `version-bump-type` you set above.
 
 #### 🚧 Update Required dbt Version (WIP) 🚧 
 > This currently does not work as intended. See [issue #21](https://github.com/fivetran/dbt_package_updater/issues/21).
@@ -121,13 +135,11 @@ The intention here is: To update the required dbt version across packages, add t
 require-dbt-version: [">=1.4.0", "<2.0.0"] # or whatever range you want
 ```
 
-#### 🚧 Update package dependency version(s) (WIP) 🚧 
-> This currently does not work as intended. See [issue #22](https://github.com/fivetran/dbt_package_updater/issues/22).
-
-This is intended to update the ranges of package dependencies in each project's `packages.yml` file. It currently only has logic built out to change the version of `fivetran_utils` and _potentially_ a source package (not fully tested).
-
 ## Step 4: Run the Script
 - Update the `package_manager.yml` for all packages you wish to perform the updates on. To be on the safe side of API limits, you may need to only run the script on a subset of data at a time. In other words, you will need to comment out packages and run the updater on **about 10 a time**.
+
+> Don't like this workflow? Perhaps take a crack at [Issue #19](https://github.com/fivetran/dbt_package_updater/issues/19)...
+
 
 This is the command you will run in your virual env to run the script:
 ```bash
