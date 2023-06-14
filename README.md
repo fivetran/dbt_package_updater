@@ -53,19 +53,6 @@ In `package_manager.yml`, set the commit message you'd like to push these change
 commit-message: 'some commit message'
 ```
 
-### Versioning Configs
-#### Set Version Bump Type
-What kind of release will these changes produce with our `major`.`minor`.`patch` syntax?
-```yml
-version-bump-type: <major, minor, or patch>
-```
-
-#### Update Required dbt Version (WIP) 🚧 
-> This currently does not work as intended. Issue 
-
-#### Update Fivetran_utils dependency version (WIP) 🚧 
-see if i can fix
-
 ### Actual Code Change Configs
 So what changes are we trying to roll out to these packages anyways? If you do not want to run any of the following functions, make sure the relevant `package_manager.yml` config is commented out.
 
@@ -118,8 +105,29 @@ find-and-replace:
   replace: replace_with_this_thing
 ```
 
+### Versioning Configs
+#### Set Version Bump Type
+What kind of release will these changes produce with our `major`.`minor`.`patch` syntax?
+```yml
+version-bump-type: <major, minor, or patch>
+```
+This will be called in the `update_project()` function.
+
+#### 🚧 Update Required dbt Version (WIP) 🚧 
+> This currently does not work as intended. See [issue #21](https://github.com/fivetran/dbt_package_updater/issues/21).
+
+The intention here is: To update the required dbt version across packages, add the following to `package_manager.yml`:
+```yml
+require-dbt-version: [">=1.4.0", "<2.0.0"] # or whatever range you want
+```
+
+#### 🚧 Update package dependency version(s) (WIP) 🚧 
+> This currently does not work as intended. See [issue #22](https://github.com/fivetran/dbt_package_updater/issues/22).
+
+This is intended to update the ranges of package dependencies in each project's `packages.yml` file. It currently only has logic built out to change the version of `fivetran_utils` and _potentially_ a source package (not fully tested).
+
 ## Step 4: Run the Script
-- Update the `package_manager.yml` for all packages you wish to perform the updates on. To be on the safe side of API limits, you may need to only run the script on a subset of data at a time. In other words, you will need to comment out packages and run the updater on about 10 a time.
+- Update the `package_manager.yml` for all packages you wish to perform the updates on. To be on the safe side of API limits, you may need to only run the script on a subset of data at a time. In other words, you will need to comment out packages and run the updater on **about 10 a time**.
 
 This is the command you will run in your virual env to run the script:
 ```bash

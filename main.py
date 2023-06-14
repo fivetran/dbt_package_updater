@@ -67,6 +67,8 @@ def main():
         package_updates.remove_files(file_paths=config['files-to-remove'], path_to_repository=path_to_repository)
         package_updates.find_and_replace(file_paths=file_paths, find_and_replace_texts=config['find-and-replace'], path_to_repository=path_to_repository)
         package_updates.update_project(repo=repo, path_to_repository=path_to_repository, config=config)
+        
+        # call update_packages once function works
 
         # Add and commit changes to branch
         pr_lib.commit_changes(cloned_repository=cloned_repository, branch_name=config['branch-name'], commit_message=config['commit-message'], repository_author=repository_author)

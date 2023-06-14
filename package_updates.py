@@ -207,8 +207,8 @@ def update_packages(repo: github.Repository.Repository, branch_name: str, config
     The intention is to update root packages.yml files such that a new version bump is incorporated for relevant packages without having to specify specific package versions for all packages.
 
     Future ideas:
-    - add source package bumping (leveage update_project() once that works)
-    - update README as well 
+    - add source package (or any package) bumping
+    - update README dependency matrix as well 
     '''
     try:
         packages_content = repo.get_contents("packages.yml")
@@ -221,7 +221,7 @@ def update_packages(repo: github.Repository.Repository, branch_name: str, config
         for package in packages["packages"]:
             if "package" in package and package["package"] == 'fivetran/fivetran_utils':
                 package["version"] = config['fivetran-utils-version'] # as set in the package_manager.yml
-            if "package" in package and "fishtown" in package["package"] and source_bump_type != 'patch': # switch back to source
+            if "package" in package and "fivetran" in package["package"] and source_bump_type != 'patch' and package["package"] != 'fivetran/fivetran_utils': # switch back to source
                 old_vesion_range = package["version"]
                 min_version = ''
                 max_version = ''
