@@ -4,3 +4,6 @@ venv
 env
 .git
 repositories/
+keys
+keys.pub
+__pycache__/

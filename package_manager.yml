@@ -1,7 +1,50 @@
+### This gets imported into the script as "config" via the load_configurations() method
+
+## Pull Request defaults
+pull-request-title: 'Default PR Title'
+branch-name: 'MagicBot/default-branch-name'
+commit-message: 'Default commit message'
+
+## Package file updates
+# used by update_packages()
+fivetran-utils-version: [">=0.4.0", "<0.5.0"]
+
+# used by update_project() function
+version-bump-type: minor # major.minor.patch
+require-dbt-version: [">=1.4.0", "<2.0.0"] # doesn't work yet
+
+# used by remove_files()
+files-to-remove:
+- '.circleci/config.yml'
+- '.circleci/'
+
+# used by add_files()
+files-to-add:
+- '.github/pull_request_template.md'
+- '.github/PULL_REQUEST_TEMPLATE/'
+
+# used by add_to_files()
+files-to-add-to:
+- file_paths: ['.buildkite/scripts/run_models.sh']
+  insert_at_top: false
+  new_line: run-operation fivetran_utils.drop_schemas --target "$db"
+- file_paths: ['integration_tests/dbt_project.yml', 'dbt_project.yml']
+  insert_at_top: true
+  new_line: \# we added a comment \#
+
+# used by find_and_replace()
+find-and-replace:
+- find: connector
+  replace: connector_THIS_WORKED
+- find: starter
+  replace: starter_REPLACED
+
+# Repositories to update
 repositories:
+  - dbt_starter_project
   # - dbt_app_reporting 
   # - dbt_apple_search_ads 
-  - dbt_apple_search_ads_source 
+  # - dbt_apple_search_ads_source 
   # - dbt_apple_store 
   # - dbt_apple_store_source 
   # - dbt_asana 
@@ -85,45 +128,10 @@ repositories:
   # - dbt_salesforce 
   # - dbt_salesforce_source 
   # - dbt_zendesk 
-
-require-dbt-version: [">=1.3.0", "<2.0.0"]
-
-fivetran-utils-version: [">=0.4.0", "<0.5.0"]
-
-version-bump-type: minor
-
-find-and-replace-list:
-  - any_value
-  - bool_or
-  - cast_bool_to_text
-  - concat
-  - date_trunc
-  - dateadd
-  - datediff
-  - escape_single_quotes
-  - except
-  - hash
-  - intersect
-  - last_day
-  - length
-  - listagg
-  - position
-  - replace
-  - right
-  - safe_cast
-  - split_part
-  - string_literal
-  - type_bigint
-  - type_float
-  - type_int
-  - type_numeric
-  - type_string
-  - type_boolean
-  - type_timestamp
-  - current_timestamp
-  - current_timestamp_in_utc
-  - array_append
-  - array_concat
-  - array_construct
-  - surrogate_key ## keeps the same dispatch
-  - spark ## for ymls and sqls
+  # - dbt_amazon_ads
+  # - dbt_amazon_ads_source
+  # - dbt_fivetran_utils
+  # - dbt_recharge
+  # - dbt_recharge_source
+  # - dbt_zuora
+  # - dbt_zuora_source
