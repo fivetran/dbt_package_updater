@@ -1,4 +1,5 @@
 credentials.yml
+issue_data.yml
 .DS_Store
 venv
 env
