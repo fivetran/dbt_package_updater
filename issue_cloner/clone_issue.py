@@ -28,6 +28,10 @@ auth_header = {'Authorization': f'token {access_token}'}
 # Retrieve issue data from source repo
 response = requests.get(issue_api_url, headers=auth_header)
 response_data = json.loads(response.text)
+if response.status_code == 200:
+    print(f'Issue successfully retrieved from {source_repo}')
+else:
+    print(f'Error retrieving issue from {source_repo}: {response.text}')
 
 # Define destination repo(s) data
 destination_owner = issue_data['destination_owner']
