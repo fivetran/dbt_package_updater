@@ -1,7 +1,7 @@
 repositories:
   # - dbt_app_reporting 
   # - dbt_apple_search_ads 
-  - dbt_apple_search_ads_source 
+  # - dbt_apple_search_ads_source 
   # - dbt_apple_store 
   # - dbt_apple_store_source 
   # - dbt_asana 
