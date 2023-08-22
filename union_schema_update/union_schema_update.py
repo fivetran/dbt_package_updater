@@ -111,7 +111,8 @@ for repo_name in repos:
             os.system(f'git switch {branch_name}')
             print(f'Switched to {branch_name} in repository {repo_name}')
 
-        modifications['CHANGELOG.md'] = {'add_to_front': f'''# dbt_{short_name} v{next_version}
+        if 'source' in repo_name:
+            modifications['CHANGELOG.md'] = {'add_to_front': f'''# dbt_{short_name} v{next_version}
 [PR #{next_pr}](https://github.com/fivetran/{repo_name}/pull/{next_pr}) includes the following updates:
 ## Feature update 🎉
 - Unioning capability! This adds the ability to union source data from multiple {base_name} connectors. Refer to the [README](https://github.com/fivetran/{repo_name}/blob/main/README.md) for more details.
@@ -120,6 +121,19 @@ for repo_name in repos:
 - Updated tmp models to union source data using the `fivetran_utils.union_data` macro. 
 - To distinguish which source each field comes from, added `source_relation` column in each staging model and applied the `fivetran_utils.source_relation` macro.
 - Updated tests to account for the new `source_relation` column.
+'''}
+            
+        if 'source' not in repo_name:
+            modifications['CHANGELOG.md'] = {'add_to_front': f'''# dbt_{short_name} v{next_version}
+[PR #{next_pr}](https://github.com/fivetran/{repo_name}/pull/{next_pr}) includes the following updates:
+## Feature update 🎉
+- Unioning capability! This adds the ability to union source data from multiple {base_name} connectors. Refer to the [README](https://github.com/fivetran/{repo_name}/blob/main/README.md) for more details.
+
+## Under the hood 🚘
+- In the source package, updated tmp models to union source data using the `fivetran_utils.union_data` macro. 
+- To distinguish which source each field comes from, added `source_relation` column in each staging and downstream model and applied the `fivetran_utils.source_relation` macro.
+- Updated tests to account for the new `source_relation` column.
+    - The `source_relation` column is included in all joins and window function partition clauses in the transform package. 
 '''}
 
         modifications['README.md'] = {'replace_text': {
@@ -144,7 +158,16 @@ vars:
             'replacement': f"version: '{next_version}'"
         }}
 
-        model_list = os.listdir('./models')
+        # model_list = os.listdir('./models')
+
+        model_list = []
+        for root, dirs, files in os.walk('./models'):
+            for file_name in files:
+                file_path = os.path.join(root, file_name)
+                model_list.append(file_path.replace('./models/',''))
+
+# # Modify the paths to only include the subfolder structure
+# subfolder_file_paths = [os.path.relpath(path, model_directory) for path in all_file_paths]
 
         # Start rules for source vs transform
         if 'source' in repo_name:
@@ -228,8 +251,6 @@ vars:
             for file_path, modification in modifications.items():
                 # Make the desired changes to the file
                 try:
-                    # if 'models/src_' in file_path and '_source' in repo_name:
-                    #     file_path = file_path + base_name +'.yml'
                     with open(file_path, 'r') as file:
                         existing_content = file.read()
                 except:
@@ -245,40 +266,37 @@ vars:
         except Exception as e:
             print(f'Error applying changes to {file_path}. {e}')
 
-#         # Commit the changes once it's all done
-#         os.system(f'git commit -am "{branch_name} updates"')
+        # Commit the changes once it's all done
+        os.system(f'git commit -am "{branch_name} updates"')
 
-#         # Push the changes to the remote repository
-#         os.system(f'git push origin HEAD:{branch_name}')
+        # Push the changes to the remote repository
+        os.system(f'git push origin HEAD:{branch_name}')
 
-#         print(f'Pushed updates to {repo_name} in the new branch {branch_name}')
+        print(f'Pushed updates to {repo_name} in the new branch {branch_name}')
 
-#         # Create PR now that the branch is pushed
-#         pr_title = 'Feature: Databricks compatibility'
+        # Create PR now that the branch is pushed
+        pr_title = 'Feature: Union schema compatibility'
 
-#         # Create PR
-#         if '_source' in repo_name:
-#             src_yml_update = f'- [ ] `{short_name}.yml` database logic updated\n' # only add this for source packages
-#         else:
-#             src_yml_update = ''
-#         pr_body = f'''Confirm the following files were correctly updated automatically:
-# - [ ] `hooks/pre-command` line added
-# - [ ] `pipeline.yml` section added
-# - [ ] `sample.profiles.yml` catalog updated
-# - [ ] `integration_tests/dbt_project.yml` section added (check for dupes though)
-# - [ ] Version updates for `dbt_project.yml` and `integration_tests/dbt_project.yml` (automatically moved to next breaking change)
-# - [ ] Changelog (automatically moved to next breaking change, but check the PR links were added correctly!)
-# {src_yml_update}
-# Manual updates are:
-# - [ ] `README` installation and dependencies
-# - [ ] `packages.yml` for transform packages
-# - [ ] Incremental Models
-#             '''
-#         pull_request = repo.create_pull(title=pr_title, body=pr_body, base='main', head=branch_name)
-#         pr_number = pull_request.number
+        # Create PR
+        pr_body = f'''Confirm the following files were correctly updated automatically:
+- [ ] CHANGELOG
+- [ ] README
+- [ ] stg_{base_name}.yml, src_{base_name}.yml, {base_name}.yml (depending if source or transform)
+- [ ] doc.md
+- [ ] joins
+- [ ] window functions (partition by)
 
-#         print(f"Pull request #{pr_number} created: {pull_request.html_url}")
-#         print(f'{repo_name} updates complete.')
+Manual updates:
+- [ ] Add `source_relation` to downstream models
+- [ ] Finish any incomplete/incorrect joins/partitions
+- [ ] Update tests to include `source_relation` in unique-combination-of-cols
+    - May need to remove some uniqueness tests in favor of the combo test
+'''
+        pull_request = repo.create_pull(title=pr_title, body=pr_body, base='main', head=branch_name)
+        pr_number = pull_request.number
+
+        print(f"Pull request #{pr_number} created: {pull_request.html_url}")
+        print(f'{repo_name} updates complete.')
         os.chdir('..')
 
     except Exception as e:
