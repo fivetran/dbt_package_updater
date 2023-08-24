@@ -4,6 +4,8 @@ import os
 from github import Github
 from math import floor
 
+create_prs = 'true'
+
 # Function to load yaml files as dictionaries
 def load_yml(yml_name) -> dict:
     with open(yml_name) as file:
@@ -11,23 +13,27 @@ def load_yml(yml_name) -> dict:
     return contents
 
 # Function to add the source_relation condition to a match
-def add_source_relation(match):
+def add_source_relation_join(match):
     existing_join = match.group(1)
     table_names = re.findall(r'[\w_]+', existing_join)  # Extract table names
-    new_condition = f'and {table_names[4]}.source_relation = {table_names[6]}.source_relation'
+    new_condition = f'and {table_names[3]}.source_relation = {table_names[5]}.source_relation'
     return existing_join + '\n        ' + new_condition
 
-branch_name = 'MagicBot/add-union-schema'  # Name of the new branch to create
-
-repo_file = load_yml('union_schema_pkgs.yml')
-repos = repo_file['repositories']
-
-# Authenticate with Github API using personal access token
-creds = load_yml('../credentials.yml')
-access_token = creds['access_token']
-
-# Create a PyGithub instance using the access token
-g = Github(access_token)
+def add_line_after_date_day(match):
+    try:
+        original_line = match.group()  # Get the entire matched line
+        table_name = re.search(r'([\w_]+)\.date_day', original_line).group(1)
+        new_line_to_add = f'{table_name}.source_relation,'
+    except:
+        try:
+            original_line = match.group()  # Get the entire matched line
+            table_name = re.search(r'cast\(([\w_]+)\.\w+ as date\) as date_day,', original_line).group(1)
+            new_line_to_add = f'{table_name}.source_relation,'
+        except:
+            original_line = match.group()  # Get the entire matched line
+            table_name = ''
+            new_line_to_add = f'{table_name}.source_relation,'
+    return f'        {new_line_to_add}\n{original_line}'
 
 def modify_file(file_content, modification):
     modified_content = file_content
@@ -42,6 +48,10 @@ def modify_file(file_content, modification):
         old_text = modification['replace_text_2']['old_text']
         new_text = modification['replace_text_2']['new_text']
         modified_content = modified_content.replace(old_text, new_text)
+    if 'replace_text_3' in modification:
+        old_text = modification['replace_text_3']['old_text']
+        new_text = modification['replace_text_3']['new_text']
+        modified_content = modified_content.replace(old_text, new_text)
     if 'add_to_front' in modification:
         lines_to_add = modification['add_to_front']
         modified_content = lines_to_add + f'\n{modified_content}'
@@ -53,8 +63,23 @@ def modify_file(file_content, modification):
         pattern = modification['regex_2']['pattern']
         replacement = modification['regex_2']['replacement']
         modified_content = re.sub(pattern, replacement, modified_content, flags=re.MULTILINE)
-
+    if 'regex_3' in modification:
+        pattern = modification['regex_3']['pattern']
+        replacement = modification['regex_3']['replacement']
+        modified_content = re.sub(pattern, replacement, modified_content, flags=re.MULTILINE)
     return modified_content
+
+branch_name = 'MagicBot/add-union-schema'  # Name of the new branch to create
+
+repo_file = load_yml('union_schema_pkgs.yml')
+repos = repo_file['repositories']
+
+# Authenticate with Github API using personal access token
+creds = load_yml('../credentials.yml')
+access_token = creds['access_token']
+
+# Create a PyGithub instance using the access token
+g = Github(access_token)
 
 try:
     os.mkdir('dbt_packages')
@@ -62,7 +87,7 @@ try:
 except:
     os.chdir('dbt_packages')
 
-modifications = {'models/docs.md': {'add_lines': '''\n{% docs source_relation %}
+modifications = {'models/docs.md': {'add_lines': '''{% docs source_relation %}
 The source of the record if the unioning functionality is being used. If not this field will be empty.
 {% enddocs %}'''}}
 
@@ -81,16 +106,19 @@ for repo_name in repos:
         latest_release = floor(float(repo.get_latest_release().tag_name.strip('v0.')) + 1)
         next_version = '0.' + str(latest_release) + '.0'
 
-        # Get next PR number
-        pull_requests = repo.get_pulls(state='all')
-        issues = repo.get_issues(state='all')
-        all_items = list(pull_requests) + list(issues)
-        max_number = max([item.number for item in all_items])
-        next_pr = max_number + 1
+        try:
+            # Get next PR number
+            pull_requests = repo.get_pulls(state='all')
+            issues = repo.get_issues(state='all')
+            all_items = list(pull_requests) + list(issues)
+            max_number = max([item.number for item in all_items])
+            next_pr = max_number + 1
 
-        # Get package updater PR number
-        # Search for the pull request by title
-        pkg_pr_no = [pr.number for pr in pull_requests if pr.title == 'Package Updater PR'][0] 
+            # Get package updater PR number
+            # Search for the pull request by title
+            pkg_pr_no = [pr.number for pr in pull_requests if pr.title == 'Package Updater PR'][0] 
+        except:
+            pkg_pr_no = 1
         pkg_pr_link = f'([#{pkg_pr_no}](https://github.com/fivetran/{repo_name}/pull/{pkg_pr_no}))'
 
         try:
@@ -110,6 +138,11 @@ for repo_name in repos:
         except:
             os.system(f'git switch {branch_name}')
             print(f'Switched to {branch_name} in repository {repo_name}')
+
+        # create docs if it doesn't exist.
+        if not os.path.exists('models/docs.md'):
+            with open('models/docs.md', 'w') as file:
+                pass  # Creating a new blank file
 
         if 'source' in repo_name:
             modifications['CHANGELOG.md'] = {'add_to_front': f'''# dbt_{short_name} v{next_version}
@@ -139,15 +172,18 @@ for repo_name in repos:
         modifications['README.md'] = {'replace_text': {
             'old_text': r'<summary>Expand for configurations</summary>',
             'new_text': f'''<summary>Expand for configurations</summary>\n
-### Unioning Multiple Connectors
-If you have multiple {base_name} connectors in Fivetran and would like to use this package on all of them simultaneously, we have provided functionality to union the data together and pass the unioned table into the transformations. You will be able to see which source it came from in the `source_relation` column of each model. To use this functionality, you will need to set either the `{base_name}_union_schemas` or `{base_name}_union_databases` variables like the following example (**note that you cannot use both**):
+### Union multiple connectors
+If you have multiple {base_name} connectors in Fivetran and would like to use this package on all of them simultaneously, we have provided functionality to do so. The package will union all of the data together and pass the unioned table into the transformations. You will be able to see which source it came from in the `source_relation` column of each model. To use this functionality, you will need to set either the `{base_name}_union_schemas` OR `{base_name}_union_databases` variables (cannot do both) in your root `dbt_project.yml` file:
 
 ```yml
 vars:
-  {base_name}_source:
     {base_name}_union_schemas: ['{base_name}_usa','{base_name}_canada'] # use this if the data is in different schemas/datasets of the same database/project
     {base_name}_union_databases: ['{base_name}_usa','{base_name}_canada'] # use this if the data is in different databases/projects but uses the same schema name
-```'''}}
+```
+Please be aware that the native `source.yml` connection set up in the package will not function when the union schema/database feature is utilized. Although the data will be correctly combined, you will not observe the sources linked to the package models in the Directed Acyclic Graph (DAG). This happens because the package includes only one defined `source.yml`.
+
+To connect your multiple schema/database sources to the package models, follow the steps outlined in the [Union Data Defined Sources Configuration](https://github.com/fivetran/dbt_fivetran_utils/tree/releases/v0.4.latest#union_data-source) section of the Fivetran Utils documentation for the union_data macro. This will ensure a proper configuration and correct visualization of connections in the DAG.'''
+}}
 
         modifications['dbt_project.yml'] = {'regex': {
             'pattern': r"^version:.*",
@@ -201,6 +237,12 @@ vars:
         description: "{{ doc('source_relation') }}"'''
             }
 
+            modifications[f'models/stg_{base_name}.yml']['replace_text_2'] = {
+                'old_text': '  combination_of_columns:',
+                'new_text': '''  combination_of_columns:
+            - source_relation'''
+            }
+
             tmp_list = os.listdir('./models/tmp')
             for model_name in tmp_list:
                 if '.sql' in model_name:
@@ -222,21 +264,34 @@ vars:
 }}
 
         if 'source' not in repo_name:
-            modifications[f'models/{base_name}.yml'] = {'add_to_front': 'UPDATE TESTS AND CHECK SOURCE_RELATION ADDED PROPERLY!!! (delete line when done.)'}
-            modifications[f'models/{base_name}.yml']['replace_text'] = {
+            if not os.path.exists(f'models/{base_name}.yml'):
+                yml_name = base_name.replace('_ads','')
+            else:
+                yml_name = base_name
+            modifications[f'models/{yml_name}.yml'] = {'add_to_front': 'UPDATE TESTS AND CHECK SOURCE_RELATION ADDED PROPERLY!!! (delete line when done.)'}
+            modifications[f'models/{yml_name}.yml']['replace_text'] = {
                 'old_text': '  columns:',
                 'new_text': '''  columns:
       - name: source_relation
         description: "{{ doc('source_relation') }}"'''
+            }
+            modifications[f'models/{yml_name}.yml']['replace_text_2'] = {
+                'old_text': '  combination_of_columns:',
+                'new_text': '''  combination_of_columns:
+            - source_relation'''
             }
 
         for model_name in model_list:
             if '.sql' in model_name:
                 if 'source' not in repo_name:
                     modifications[f'models/{model_name}'] = {}
+                    modifications[f'models/{model_name}']['regex_3'] = {
+                        'pattern': r".*date_day,",
+                        'replacement': add_line_after_date_day
+                    }
                 modifications[f'models/{model_name}']['regex_2'] = {
                     'pattern': r"(join [\w_]+\n\s*on [\w_]+\.[\w_]+ = [\w_]+\.[\w_]+)",
-                    'replacement': add_source_relation
+                    'replacement': add_source_relation_join
                 }
 
                 modifications[f'models/{model_name}']['add_to_front'] = '''ADD source_relation WHERE NEEDED + CHECK JOINS AND WINDOW FUNCTIONS! (Delete this line when done.)\n'''
@@ -266,37 +321,41 @@ vars:
         except Exception as e:
             print(f'Error applying changes to {file_path}. {e}')
 
-        # Commit the changes once it's all done
-        os.system(f'git commit -am "{branch_name} updates"')
+        if create_prs == 'true':
+            # Commit the changes once it's all done
+            os.system(f'git commit -am "{branch_name} updates"')
 
-        # Push the changes to the remote repository
-        os.system(f'git push origin HEAD:{branch_name}')
+            # Push the changes to the remote repository
+            os.system(f'git push origin HEAD:{branch_name}')
 
-        print(f'Pushed updates to {repo_name} in the new branch {branch_name}')
+            print(f'Pushed updates to {repo_name} in the new branch {branch_name}')
 
-        # Create PR now that the branch is pushed
-        pr_title = 'Feature: Union schema compatibility'
+            # Create PR now that the branch is pushed
+            pr_title = 'Feature: Union schema compatibility'
 
-        # Create PR
-        pr_body = f'''Confirm the following files were correctly updated automatically:
-- [ ] CHANGELOG
-- [ ] README
-- [ ] stg_{base_name}.yml, src_{base_name}.yml, {base_name}.yml (depending if source or transform)
-- [ ] doc.md
-- [ ] joins
-- [ ] window functions (partition by)
+            # Create PR
+            pr_body = f'''Confirm the following files were correctly updated automatically:
+    - [ ] CHANGELOG
+    - [ ] README
+    - [ ] stg_{base_name}.yml, src_{base_name}.yml, {base_name}.yml (depending if source or transform)
+    - [ ] docs.md
+    - [ ] joins
+    - [ ] window functions (partition by)
+    - [ ] 'source_relation' column added in staging and transform models
+    - [ ] tests
 
-Manual updates:
-- [ ] Add `source_relation` to downstream models
-- [ ] Finish any incomplete/incorrect joins/partitions
-- [ ] Update tests to include `source_relation` in unique-combination-of-cols
-    - May need to remove some uniqueness tests in favor of the combo test
-'''
-        pull_request = repo.create_pull(title=pr_title, body=pr_body, base='main', head=branch_name)
-        pr_number = pull_request.number
+    Manual updates:
+    - [ ] Add `source_relation` to downstream models if necessary
+    - [ ] Finish any incomplete/incorrect joins/partitions
+    - [ ] Update tests to include `source_relation` in unique-combination-of-cols if necessary
+        - May need to remove some uniqueness tests in favor of the combo test
+    '''
+            pull_request = repo.create_pull(title=pr_title, body=pr_body, base='main', head=branch_name)
+            pr_number = pull_request.number
 
-        print(f"Pull request #{pr_number} created: {pull_request.html_url}")
-        print(f'{repo_name} updates complete.')
+            print(f"Pull request #{pr_number} created: {pull_request.html_url}")
+            print(f'{repo_name} updates complete.')
+
         os.chdir('..')
 
     except Exception as e:
