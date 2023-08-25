@@ -4,7 +4,8 @@ import os
 from github import Github
 from math import floor
 
-create_prs = 'true'
+# create_prs = 'true'
+create_prs = 'false'
 
 # Function to load yaml files as dictionaries
 def load_yml(yml_name) -> dict:
@@ -34,6 +35,11 @@ def add_line_after_date_day(match):
             table_name = ''
             new_line_to_add = f'{table_name}.source_relation,'
     return f'        {new_line_to_add}\n{original_line}'
+
+def increment_groupby(match):
+    original_number = int(match.group(1))
+    new_number = str(original_number + 1)
+    return f'{{{{ dbt_utils.group_by({new_number}) }}}}' 
 
 def modify_file(file_content, modification):
     modified_content = file_content
@@ -67,6 +73,10 @@ def modify_file(file_content, modification):
         pattern = modification['regex_3']['pattern']
         replacement = modification['regex_3']['replacement']
         modified_content = re.sub(pattern, replacement, modified_content, flags=re.MULTILINE)
+    if 'regex_4' in modification:
+        pattern = modification['regex_4']['pattern']
+        replacement = modification['regex_4']['replacement']
+        modified_content = re.sub(pattern, replacement, modified_content, flags=re.MULTILINE)
     return modified_content
 
 branch_name = 'MagicBot/add-union-schema'  # Name of the new branch to create
@@ -86,10 +96,6 @@ try:
     os.chdir('dbt_packages')
 except:
     os.chdir('dbt_packages')
-
-modifications = {'models/docs.md': {'add_lines': '''{% docs source_relation %}
-The source of the record if the unioning functionality is being used. If not this field will be empty.
-{% enddocs %}'''}}
 
 for repo_name in repos:
     try:
@@ -144,6 +150,10 @@ for repo_name in repos:
             with open('models/docs.md', 'w') as file:
                 pass  # Creating a new blank file
 
+        modifications = {'models/docs.md': {'add_lines': '''{% docs source_relation %}
+The source of the record if the unioning functionality is being used. If not this field will be empty.
+{% enddocs %}'''}}
+
         if 'source' in repo_name:
             modifications['CHANGELOG.md'] = {'add_to_front': f'''# dbt_{short_name} v{next_version}
 [PR #{next_pr}](https://github.com/fivetran/{repo_name}/pull/{next_pr}) includes the following updates:
@@ -157,6 +167,10 @@ for repo_name in repos:
 '''}
             
         if 'source' not in repo_name:
+            modifications['packages.yml'] = {'add_lines': f'''- git: https://github.com/fivetran/{base_name}_source.git
+  revision: MagicBot/add-union-schema
+  warn-unpinned: false'''}
+
             modifications['CHANGELOG.md'] = {'add_to_front': f'''# dbt_{short_name} v{next_version}
 [PR #{next_pr}](https://github.com/fivetran/{repo_name}/pull/{next_pr}) includes the following updates:
 ## Feature update 🎉
@@ -289,6 +303,10 @@ To connect your multiple schema/database sources to the package models, follow t
                         'pattern': r".*date_day,",
                         'replacement': add_line_after_date_day
                     }
+                    modifications[f'models/{model_name}']['regex_4'] = {
+                        'pattern': r"\{\{\s*dbt_utils\.group_by\((\d+)\)\s*\}}",
+                        'replacement': increment_groupby
+                    }
                 modifications[f'models/{model_name}']['regex_2'] = {
                     'pattern': r"(join [\w_]+\n\s*on [\w_]+\.[\w_]+ = [\w_]+\.[\w_]+)",
                     'replacement': add_source_relation_join
@@ -335,20 +353,21 @@ To connect your multiple schema/database sources to the package models, follow t
 
             # Create PR
             pr_body = f'''Confirm the following files were correctly updated automatically:
-    - [ ] CHANGELOG
-    - [ ] README
-    - [ ] stg_{base_name}.yml, src_{base_name}.yml, {base_name}.yml (depending if source or transform)
-    - [ ] docs.md
-    - [ ] joins
-    - [ ] window functions (partition by)
-    - [ ] 'source_relation' column added in staging and transform models
-    - [ ] tests
+Confirm the following files were correctly updated automatically:
+- [ ] CHANGELOG
+- [ ] README
+- [ ] stg_facebook_ads.yml, src_facebook_ads.yml, facebook_ads.yml (depending if source or transform)
+- [ ] docs.md
+- [ ] joins
+- [ ] window functions (partition by)
+- [ ] 'source_relation' column added in staging and transform models
+- [ ] tests
 
-    Manual updates:
-    - [ ] Add `source_relation` to downstream models if necessary
-    - [ ] Finish any incomplete/incorrect joins/partitions
-    - [ ] Update tests to include `source_relation` in unique-combination-of-cols if necessary
-        - May need to remove some uniqueness tests in favor of the combo test
+Manual updates:
+- [ ] Add `source_relation` to downstream models if necessary
+- [ ] Finish any incomplete/incorrect joins/partitions
+- [ ] Update tests to include `source_relation` in unique-combination-of-cols if necessary
+    - May need to remove some uniqueness tests in favor of the combo test
     '''
             pull_request = repo.create_pull(title=pr_title, body=pr_body, base='main', head=branch_name)
             pr_number = pull_request.number
