@@ -4,8 +4,8 @@ import os
 from github import Github
 from math import floor
 
-# create_prs = 'true'
-create_prs = 'false'
+create_prs = 'true'
+# create_prs = 'false'
 
 # Function to load yaml files as dictionaries
 def load_yml(yml_name) -> dict:
@@ -353,7 +353,6 @@ To connect your multiple schema/database sources to the package models, follow t
 
             # Create PR
             pr_body = f'''Confirm the following files were correctly updated automatically:
-Confirm the following files were correctly updated automatically:
 - [ ] CHANGELOG
 - [ ] README
 - [ ] stg_facebook_ads.yml, src_facebook_ads.yml, facebook_ads.yml (depending if source or transform)
@@ -368,6 +367,10 @@ Manual updates:
 - [ ] Finish any incomplete/incorrect joins/partitions
 - [ ] Update tests to include `source_relation` in unique-combination-of-cols if necessary
     - May need to remove some uniqueness tests in favor of the combo test
+
+Validation:
+- [ ] `dbt run` locally passes
+- [ ] `dbt test` locally passes
     '''
             pull_request = repo.create_pull(title=pr_title, body=pr_body, base='main', head=branch_name)
             pr_number = pull_request.number
