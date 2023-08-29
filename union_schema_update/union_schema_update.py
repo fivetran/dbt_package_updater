@@ -167,7 +167,7 @@ The source of the record if the unioning functionality is being used. If not thi
 '''}
             
         if 'source' not in repo_name:
-            modifications['packages.yml'] = {'add_lines': f'''- git: https://github.com/fivetran/{base_name}_source.git
+            modifications['packages.yml'] = {'add_lines': f'''- git: https://github.com/fivetran/{repo_name}_source.git
   revision: MagicBot/add-union-schema
   warn-unpinned: false'''}
 
@@ -262,7 +262,7 @@ To connect your multiple schema/database sources to the package models, follow t
                 if '.sql' in model_name:
                     source_name = model_name.replace(f'stg_{base_name}__','').replace('_tmp.sql','')
                     modifications[f'models/tmp/{model_name}'] = {'regex': {
-                        'pattern': r"(\n|.)*\n",
+                        'pattern': r"(select\s*\*.*)(?:\r?\n.*)*",
                         'replacement': f'''{{{{
     fivetran_utils.union_data(
         table_identifier='{source_name}', 

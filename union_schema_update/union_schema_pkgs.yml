@@ -1,10 +1,10 @@
 repositories:
-  - dbt_amazon_ads_source
-  - dbt_amazon_ads
+  # - dbt_amazon_ads_source
+  # - dbt_amazon_ads
   # - dbt_apple_search_ads 
-  # - dbt_apple_search_ads_source 
-  - dbt_facebook_ads 
-  - dbt_facebook_ads_source 
+  - dbt_apple_search_ads_source 
+  # - dbt_facebook_ads 
+  # - dbt_facebook_ads_source 
   # - dbt_google_ads 
   # - dbt_google_ads_source
   # - dbt_microsoft_ads
