@@ -5,3 +5,4 @@ env
 .git
 repositories/
 dbt_packages/
+issue_data.yml
