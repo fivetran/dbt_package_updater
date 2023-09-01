@@ -308,7 +308,7 @@ To connect your multiple schema/database sources to the package models, follow t
                         'replacement': increment_groupby
                     }
                 modifications[f'models/{model_name}']['regex_2'] = {
-                    'pattern': r"(join [\w_]+\n\s*on [\w_]+\.[\w_]+ = [\w_]+\.[\w_]+)",
+                    'pattern': r"(join [\w_\s]+\n\s*on [\w_]+\.[\w_]+ = [\w_]+\.[\w_]+)",
                     'replacement': add_source_relation_join
                 }
 
@@ -352,7 +352,9 @@ To connect your multiple schema/database sources to the package models, follow t
             pr_title = 'Feature: Union schema compatibility'
 
             # Create PR
-            pr_body = f'''Confirm the following files were correctly updated automatically:
+            pr_body = f'''Issue: 
+
+Confirm the following files were correctly updated automatically:
 - [ ] CHANGELOG
 - [ ] README
 - [ ] stg_facebook_ads.yml, src_facebook_ads.yml, facebook_ads.yml (depending if source or transform)
