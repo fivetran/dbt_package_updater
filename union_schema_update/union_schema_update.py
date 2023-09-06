@@ -270,7 +270,7 @@ To connect your multiple schema/database sources to the package models, follow t
         schema_variable='{base_name}_schema', 
         default_database=target.database,
         default_schema='{base_name}',
-        default_variable='{source_name}_source',
+        default_variable='{source_name}',
         union_schema_variable='{base_name}_union_schemas',
         union_database_variable='{base_name}_union_databases'
     )
@@ -357,7 +357,7 @@ To connect your multiple schema/database sources to the package models, follow t
 Confirm the following files were correctly updated automatically:
 - [ ] CHANGELOG
 - [ ] README
-- [ ] stg_facebook_ads.yml, src_facebook_ads.yml, facebook_ads.yml (depending if source or transform)
+- [ ] stg_{base_name}.yml, src_{base_name}.yml, {base_name}.yml (depending if source or transform)
 - [ ] docs.md
 - [ ] joins
 - [ ] window functions (partition by)

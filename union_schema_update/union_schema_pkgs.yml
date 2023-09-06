@@ -11,11 +11,13 @@ repositories:
   # - dbt_linkedin
   # - dbt_microsoft_ads_source
   # - dbt_microsoft_ads
-  - dbt_pinterest_source
-  - dbt_pinterest
-  - dbt_reddit_ads_source
-  - dbt_reddit_ads
-  - dbt_snapchat_ads_source
-  - dbt_snapchat_ads
-  - dbt_tiktok_ads_source
-  - dbt_tiktok_ads
+  # - dbt_pinterest_source
+  # - dbt_pinterest
+  # - dbt_reddit_ads_source
+  # - dbt_reddit_ads
+  # - dbt_snapchat_ads_source
+  # - dbt_snapchat_ads
+  # - dbt_tiktok_ads_source
+  # - dbt_tiktok_ads
+  # - dbt_twitter
+  # - dbt_twitter_source
