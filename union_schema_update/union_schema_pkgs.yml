@@ -21,3 +21,8 @@ repositories:
   # - dbt_tiktok_ads
   # - dbt_twitter
   # - dbt_twitter_source
+  # - dbt_apple_store_source
+  # - dbt_apple_store
+  # - dbt_google_play_source
+  # - dbt_google_play
+  - dbt_app_reporting
