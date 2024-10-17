@@ -138,7 +138,7 @@ for repo_name in repos:
         {% else %}
             {{ return(False) }}
         {% endif %}
-    {% elif target.type in ('bigquery','snowflake','postgres','redshift','sqlserver') %}
+    {% elif target.type in ('bigquery','snowflake','postgres','redshift') %}
         {{ return(True) }}
     {% else %}
         {{ return(False) }}
@@ -200,7 +200,7 @@ else'''}
 - For Databricks SQL Warehouses, incremental materialization will not be used due to the incompatibility of the `insert_overwrite`  strategy.
 
 ## Under the Hood
-- The `is_databricks_sql_warehouse` has been added to return `true` if the Databricks runtime being used is an all-purpose cluster  **or** if any other Databricks non-supported destination is being used.
+- The `is_incremental_compatible` macro has been added to return `true` if the target warehouse supports our chosen incremental strategy.
   - This update was applied as there have been other Databricks runtimes discovered (ie. an endpoint and external runtime) which do not support the `insert_overwrite` incremental strategy used. '''}
 
         modifications['dbt_project.yml'] = {'regex': {
@@ -215,8 +215,7 @@ else'''}
 
         modifications['integration_tests/dbt_project.yml']['add_lines'] = f'''# Check if the models section already exists!!!
 models:
-  {short_name}:
-    +schema: "{{{{ '{short_name}_sqlw_tests' if target.name == 'databricks-sql' else '{short_name}' }}}}"'''
+  +schema: "{{{{ '{short_name}_sqlw_tests' if target.name == 'databricks-sql' else '{short_name}' }}}}"'''
 
         modifications['integration_tests/ci/sample.profiles.yml'] = {'replace_text': {
             'old_text': "threads: 2",
