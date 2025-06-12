@@ -1,0 +1,12 @@
+repositories:
+  - dbt_amazon_ads
+  - dbt_apple_search_ads
+  - dbt_facebook_ads
+  - dbt_google_ads
+  - dbt_linkedin
+  - dbt_microsoft_ads
+  - dbt_pinterest
+  - dbt_reddit_ads
+  - dbt_snapchat_ads
+  - dbt_tiktok_ads
+  - dbt_twitter
