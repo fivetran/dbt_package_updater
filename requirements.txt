@@ -1,13 +1,13 @@
-certifi==2022.9.14
+certifi==2023.7.22
 charset-normalizer==2.1.1
 Deprecated==1.2.13
 gitdb==4.0.10
 gitdb2==4.0.2
-GitPython==3.1.31
+GitPython==3.1.41
 idna==3.4
 mypy==1.2.0
 mypy-extensions==1.0.0
-pathlib==1.0.1
+pathlib==1.0.12023.7.22
 pyaml==21.10.1
 PyGithub==1.58.1
 PyJWT==2.4.0
