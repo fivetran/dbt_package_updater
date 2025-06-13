@@ -1,0 +1,102 @@
+# Enter information about the source issue
+source_owner: fivetran # Only change if your source is in a different organization
+source_repo_name: dbt_<repo name>
+source_issue_number: <issue number>
+
+# Enter information about where you're 
+destination_owner: fivetran
+destination_labels: ['type:enhancement', 'issue:copycat'] # Labels can be added to/removed from this list if necessary.
+
+# Uncomment the repositories you want to copy the issue into. If one is missing, you can add it in.
+destination_repositories: 
+  # - dbt_ad_reporting
+  # - dbt_amplitude
+  # - dbt_amplitude_source
+  # - dbt_apple_search_ads
+  # - dbt_apple_search_ads_source
+  # - dbt_apple_store
+  # - dbt_apple_store_source
+  # - dbt_asana
+  # - dbt_asana_source
+  # - dbt_facebook_ads
+  # - dbt_facebook_ads_creative_history
+  # - dbt_facebook_ads_source
+  # - dbt_facebook_pages
+  # - dbt_facebook_pages_source
+  # - dbt_fivetran_log
+  # - dbt_github
+  # - dbt_github_source
+  # - dbt_google_ads
+  # - dbt_google_ads_source
+  # - dbt_google_play
+  # - dbt_google_play_source
+  # - dbt_greenhouse
+  # - dbt_greenhouse_source
+  # - dbt_hubspot
+  # - dbt_hubspot_source
+  # - dbt_instagram_business
+  # - dbt_instagram_business_source
+  # - dbt_intercom
+  # - dbt_intercom_source
+  # - dbt_iterable
+  # - dbt_iterable_source
+  # - dbt_jira
+  # - dbt_jira_source
+  # - dbt_klaviyo
+  # - dbt_klaviyo_source
+  # - dbt_lever
+  # - dbt_lever_source
+  # - dbt_linkedin
+  # - dbt_linkedin_pages
+  # - dbt_linkedin_pages_source
+  # - dbt_linkedin_source
+  # - dbt_mailchimp
+  # - dbt_mailchimp_source
+  # - dbt_marketo
+  # - dbt_marketo_source
+  # - dbt_microsoft_ads
+  # - dbt_microsoft_ads_source
+  # - dbt_mixpanel
+  # - dbt_netsuite
+  # - dbt_netsuite_source
+  # - dbt_pardot
+  # - dbt_pardot_source
+  # - dbt_pendo
+  # - dbt_pendo_source
+  # - dbt_pinterest
+  # - dbt_pinterest_source
+  # - dbt_quickbooks
+  # - dbt_quickbooks_source 
+  # - dbt_recharge
+  # - dbt_recharge_source
+  # - dbt_reddit
+  # - dbt_reddit_ads
+  # - dbt_recurly
+  # - dbt_recurly_source
+  # - dbt_salesforce
+  # - dbt_salesforce_formula_utils
+  # - dbt_salesforce_source
+  # - dbt_sage_intacct
+  # - dbt_sage_intacct_source
+  # - dbt_shopify
+  # - dbt_shopify_holistic_reporting
+  # - dbt_shopify_source
+  # - dbt_snapchat_ads
+  # - dbt_snapchat_ads_source
+  # - dbt_social_media_reporting
+  # - dbt_stripe
+  # - dbt_stripe_source
+  # - dbt_tiktok_ads
+  # - dbt_tiktok_ads_source
+  # - dbt_twitter
+  # - dbt_twitter_organic
+  # - dbt_twitter_organic_source
+  # - dbt_twitter_source
+  # - dbt_xero
+  # - dbt_xero_source
+  # - dbt_youtube_analytics
+  # - dbt_youtube_analytics_source
+  # - dbt_zendesk
+  # - dbt_zendesk_source
+  # - dbt_zuora
+  # - dbt_zuora_source
