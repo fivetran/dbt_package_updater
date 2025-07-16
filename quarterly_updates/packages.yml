@@ -1,0 +1,226 @@
+# PRs generated:
+# - https://github.com/fivetran/dbt_amazon_ads_source/pull/25
+# - https://github.com/fivetran/dbt_amazon_ads/pull/24
+# - https://github.com/fivetran/dbt_lever_source/pull/37
+# - https://github.com/fivetran/dbt_sage_intacct/pull/35
+# - https://github.com/fivetran/dbt_jira_source/pull/48
+# - https://github.com/fivetran/dbt_amplitude/pull/27
+# - https://github.com/fivetran/dbt_amplitude_source/pull/19
+# - https://github.com/fivetran/dbt_apple_search_ads/pull/32
+# - https://github.com/fivetran/dbt_apple_search_ads_source/pull/57
+# - https://github.com/fivetran/dbt_apple_store/pull/37
+# - https://github.com/fivetran/dbt_apple_store_source/pull/22
+# - https://github.com/fivetran/dbt_asana_source/pull/42
+# - https://github.com/fivetran/dbt_asana/pull/41
+# - https://github.com/fivetran/dbt_aws_cloud_cost/pull/9
+# - https://github.com/fivetran/dbt_dynamics_365_crm/pull/9
+# - https://github.com/fivetran/dbt_facebook_ads/pull/53
+# - https://github.com/fivetran/dbt_facebook_ads_source/pull/46
+# - https://github.com/fivetran/dbt_facebook_pages/pull/16
+# - https://github.com/fivetran/dbt_facebook_pages_source/pull/16
+# - https://github.com/fivetran/dbt_fivetran_log/pull/161
+# - https://github.com/fivetran/dbt_github/pull/65
+# - https://github.com/fivetran/dbt_github_source/pull/46
+# - https://github.com/fivetran/dbt_google_ads/pull/80
+# - https://github.com/fivetran/dbt_google_ads_source/pull/69
+# - https://github.com/fivetran/dbt_google_play/pull/20
+# - https://github.com/fivetran/dbt_google_play_source/pull/21
+# - https://github.com/fivetran/dbt_greenhouse/pull/33
+# - https://github.com/fivetran/dbt_greenhouse_source/pull/36
+# - https://github.com/fivetran/dbt_hubspot/pull/162
+# - https://github.com/fivetran/dbt_hubspot_source/pull/147
+# - https://github.com/fivetran/dbt_instagram_business/pull/21
+# - https://github.com/fivetran/dbt_instagram_business_source/pull/16
+# - https://github.com/fivetran/dbt_intercom/pull/64
+# - https://github.com/fivetran/dbt_intercom_source/pull/43
+# - https://github.com/fivetran/dbt_iterable/pull/61
+# - https://github.com/fivetran/dbt_iterable_source/pull/44
+# - https://github.com/fivetran/dbt_jira/pull/142
+# - https://github.com/fivetran/dbt_klaviyo/pull/49
+# - https://github.com/fivetran/dbt_klaviyo_source/pull/28
+# - https://github.com/fivetran/dbt_lever/pull/27
+# - https://github.com/fivetran/dbt_linkedin/pull/46
+# - https://github.com/fivetran/dbt_linkedin_source/pull/76
+# - https://github.com/fivetran/dbt_linkedin_pages/pull/19
+# - https://github.com/fivetran/dbt_linkedin_pages_source/pull/20
+# - https://github.com/fivetran/dbt_mailchimp/pull/53
+# - https://github.com/fivetran/dbt_mailchimp_source/pull/28
+# - https://github.com/fivetran/dbt_marketo/pull/46
+# - https://github.com/fivetran/dbt_marketo_source/pull/42
+# - https://github.com/fivetran/dbt_microsoft_ads/pull/46
+# - https://github.com/fivetran/dbt_microsoft_ads_source/pull/42
+# - https://github.com/fivetran/dbt_mixpanel/pull/60
+# - https://github.com/fivetran/dbt_netsuite/pull/165
+# - https://github.com/fivetran/dbt_netsuite_source/pull/65
+# - https://github.com/fivetran/dbt_pardot/pull/19
+# - https://github.com/fivetran/dbt_pardot_source/pull/20
+# - https://github.com/fivetran/dbt_pendo/pull/32
+# - https://github.com/fivetran/dbt_pendo_source/pull/30
+# - https://github.com/fivetran/dbt_pinterest/pull/41
+# - https://github.com/fivetran/dbt_pinterest_source/pull/41
+# - https://github.com/fivetran/dbt_qualtrics/pull/15
+# - https://github.com/fivetran/dbt_qualtrics_source/pull/17
+# - https://github.com/fivetran/dbt_quickbooks/pull/170
+# - https://github.com/fivetran/dbt_quickbooks_source/pull/67
+# - https://github.com/fivetran/dbt_recharge/pull/32
+# - https://github.com/fivetran/dbt_recharge_source/pull/23
+# - https://github.com/fivetran/dbt_recurly/pull/35
+# - https://github.com/fivetran/dbt_recurly_source/pull/22
+# - https://github.com/fivetran/dbt_reddit_ads/pull/21
+# - https://github.com/fivetran/dbt_reddit_ads_source/pull/17
+# - https://github.com/fivetran/dbt_sage_intacct_source/pull/25
+# - https://github.com/fivetran/dbt_salesforce/pull/66
+# - https://github.com/fivetran/dbt_salesforce_marketing_cloud/pull/10
+# - https://github.com/fivetran/dbt_salesforce_source/pull/58
+# - https://github.com/fivetran/dbt_sap/pull/26
+# - https://github.com/fivetran/dbt_sap_source/pull/9
+# - https://github.com/fivetran/dbt_servicenow/pull/19
+# - https://github.com/fivetran/dbt_shopify/pull/109
+# - https://github.com/fivetran/dbt_shopify_source/pull/105
+# - https://github.com/fivetran/dbt_snapchat_ads/pull/38
+# - https://github.com/fivetran/dbt_snapchat_ads_source/pull/29
+# - https://github.com/fivetran/dbt_stripe/pull/115
+# - https://github.com/fivetran/dbt_stripe_source/pull/97
+# - https://github.com/fivetran/dbt_tiktok_ads/pull/32
+# - https://github.com/fivetran/dbt_tiktok_ads_source/pull/33
+# - https://github.com/fivetran/dbt_twilio/pull/15
+# - https://github.com/fivetran/dbt_twilio_source/pull/16
+# - https://github.com/fivetran/dbt_twitter/pull/33
+# - https://github.com/fivetran/dbt_twitter_organic/pull/16
+# - https://github.com/fivetran/dbt_twitter_organic_source/pull/16
+# - https://github.com/fivetran/dbt_twitter_source/pull/32
+# - https://github.com/fivetran/dbt_workday/pull/13
+# - https://github.com/fivetran/dbt_xero/pull/62
+# - https://github.com/fivetran/dbt_xero_source/pull/27
+# - https://github.com/fivetran/dbt_youtube_analytics/pull/21
+# - https://github.com/fivetran/dbt_youtube_analytics_source/pull/17
+# - https://github.com/fivetran/dbt_zendesk/pull/205
+# - https://github.com/fivetran/dbt_zendesk_source/pull/73
+# - https://github.com/fivetran/dbt_zuora/pull/29
+# - https://github.com/fivetran/dbt_zuora_source/pull/20
+# - https://github.com/fivetran/dbt_ga4_export/pull/10
+# - https://github.com/fivetran/dbt_amazon_selling_partner/pull/4
+# - https://github.com/fivetran/dbt_app_reporting/pull/29
+# - https://github.com/fivetran/dbt_ad_reporting/pull/154
+# - https://github.com/fivetran/dbt_social_media_reporting/pull/21
+# - https://github.com/fivetran/dbt_shopify_holistic_reporting/pull/31
+# - https://github.com/fivetran/dbt_unified_rag/pull/29
+# - https://github.com/fivetran/dbt_salesforce_formula_utils/pull/122
+
+repositories:
+  # - dbt_jira_source
+  # - dbt_lever_source
+  # - dbt_amazon_ads
+  # - dbt_amazon_ads_source 
+  # - dbt_sage_intacct
+  # - dbt_amplitude
+  # - dbt_amplitude_source
+  # - dbt_apple_search_ads
+  # - dbt_apple_search_ads_source
+  # - dbt_apple_store
+  # - dbt_apple_store_source
+  # - dbt_asana
+  # - dbt_asana_source
+  # - dbt_aws_cloud_cost
+  # - dbt_dynamics_365_crm
+  # - dbt_facebook_ads
+  # - dbt_facebook_ads_source
+  # - dbt_facebook_pages
+  # - dbt_facebook_pages_source
+  # - dbt_fivetran_log
+
+  # - dbt_fivetran_utils
+
+  # - dbt_github
+  # - dbt_github_source
+  # - dbt_google_ads
+  # - dbt_google_ads_source
+  # - dbt_google_play
+  # - dbt_google_play_source
+  # - dbt_greenhouse
+  # - dbt_greenhouse_source
+  # - dbt_hubspot
+  # - dbt_hubspot_source
+
+  # - dbt_instagram_business
+  # - dbt_instagram_business_source
+  # - dbt_intercom
+  # - dbt_intercom_source
+  # - dbt_iterable
+  # - dbt_iterable_source
+
+  # - dbt_jira
+  # - dbt_klaviyo
+  # - dbt_klaviyo_source
+  # - dbt_lever
+  # - dbt_linkedin
+  # - dbt_linkedin_source
+  # - dbt_linkedin_pages
+  # - dbt_linkedin_pages_source
+  # - dbt_mailchimp
+  # - dbt_mailchimp_source
+
+  # - dbt_marketo
+  # - dbt_marketo_source
+  # - dbt_microsoft_ads
+  # - dbt_microsoft_ads_source
+  # - dbt_mixpanel
+  # - dbt_netsuite
+  # - dbt_netsuite_source
+  # - dbt_pardot
+  # - dbt_pardot_source
+  # - dbt_pendo
+  # - dbt_pendo_source
+
+  # - dbt_pinterest
+  # - dbt_pinterest_source
+  # - dbt_qualtrics
+  # - dbt_qualtrics_source
+  # - dbt_quickbooks
+  # - dbt_quickbooks_source
+  # - dbt_recharge
+  # - dbt_recharge_source
+  # - dbt_recurly
+  # - dbt_recurly_source
+  # - dbt_reddit_ads
+  # - dbt_reddit_ads_source
+
+  # - dbt_sage_intacct_source
+  # - dbt_salesforce
+  # - dbt_salesforce_marketing_cloud
+  # - dbt_salesforce_source
+  # - dbt_sap
+  # - dbt_sap_source
+  # - dbt_servicenow
+  # - dbt_shopify
+  # - dbt_shopify_source
+  # - dbt_snapchat_ads
+  # - dbt_snapchat_ads_source
+  # - dbt_stripe
+  # - dbt_stripe_source
+  # - dbt_tiktok_ads
+  # - dbt_tiktok_ads_source
+  # - dbt_twilio
+  # - dbt_twilio_source
+  # - dbt_twitter
+  # - dbt_twitter_organic
+  # - dbt_twitter_organic_source
+  # - dbt_twitter_source
+  # - dbt_workday
+  # - dbt_xero
+  # - dbt_xero_source
+  # - dbt_youtube_analytics
+  # - dbt_youtube_analytics_source
+  # - dbt_zendesk
+  # - dbt_zendesk_source
+  # - dbt_zuora
+  # - dbt_zuora_source
+  # - dbt_ga4_export
+  # - dbt_amazon_selling_partner
+
+  # - dbt_ad_reporting
+  # - dbt_app_reporting
+  # - dbt_salesforce_formula_utils
+  # - dbt_social_media_reporting
+  # - dbt_unified_rag
+  # - dbt_shopify_holistic_reporting
